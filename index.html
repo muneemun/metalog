@@ -422,15 +422,35 @@
     <!-- TAB 3: FULL ROADMAP VIEW -->
     <div id="tab-content-roadmap" class="hidden space-y-6">
       
-      <!-- Week Filter Buttons -->
-      <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3">
-        <div class="flex items-center justify-between">
-          <h3 class="text-base sm:text-lg font-bold text-slate-800">
-            🗺️ 63일 전체 커리큘럼 로드맵 (비상 완자 1학기 3과목 + 학원)
+      <!-- Roadmap Filters Container -->
+      <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h3 class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
+            <span>🗺️</span> 63일 전체 커리큘럼 로드맵 (비상 완자 1학기 3과목 + 학원)
           </h3>
+          <div id="roadmap-stats-badge" class="text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1 rounded-full w-fit">
+            전체 일정 로딩 중...
+          </div>
         </div>
-        <div id="roadmap-week-filters" class="flex flex-wrap items-center gap-1.5">
-          <!-- Populated by JS -->
+
+        <!-- Filter Row 1: 과목별 필터 -->
+        <div class="space-y-1.5">
+          <div class="text-[11px] font-bold text-slate-400 flex items-center gap-1">
+            <span>📚</span> 과목별 보기
+          </div>
+          <div id="roadmap-subject-filters" class="flex flex-wrap items-center gap-1.5">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Filter Row 2: 주차별 필터 -->
+        <div class="space-y-1.5 pt-2 border-t border-slate-100">
+          <div class="text-[11px] font-bold text-slate-400 flex items-center gap-1">
+            <span>📆</span> 주차별 보기
+          </div>
+          <div id="roadmap-week-filters" class="flex flex-wrap items-center gap-1.5">
+            <!-- Populated by JS -->
+          </div>
         </div>
       </div>
 
@@ -711,7 +731,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="data.js?v=1.1.5"></script>
-  <script src="app.js?v=1.1.5"></script>
+  <script src="data.js?v=1.1.6"></script>
+  <script src="app.js?v=1.1.6"></script>
 </body>
 </html>

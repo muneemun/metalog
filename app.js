@@ -26,6 +26,7 @@
   let currentWeeklyWeek = 1; // 1..9
   let metaFilter = 'all'; // 'all' | 'red' | 'yellow' | 'green' | 'academy'
   let roadmapWeekFilter = 'all'; // 'all' | 1..9
+  let roadmapSubjectFilter = 'all'; // 'all' | '통합과학1' | '한국사1' | '통합사회1' | 'academy'
   let selectedDate = DEFAULT_START_DATE;
   let simulatedDate = localStorage.getItem(STORAGE_KEYS.SIMULATED_DATE) || null;
   let currentCalendarMonth = new Date(2026, 11, 1); // December 2026 default
@@ -991,23 +992,90 @@
     roadmapWeekFilter = week;
     renderRoadmapTable();
   };
+  window.setRoadmapWeekFilter = window.setRoadmapFilter;
+
+  window.setRoadmapSubjectFilter = function(subject) {
+    roadmapSubjectFilter = subject;
+    renderRoadmapTable();
+  };
 
   function renderRoadmapTable() {
     const container = document.getElementById('roadmap-table-body');
-    const filterContainer = document.getElementById('roadmap-week-filters');
+    const weekFilterContainer = document.getElementById('roadmap-week-filters');
+    const subjectFilterContainer = document.getElementById('roadmap-subject-filters');
+    const statsBadge = document.getElementById('roadmap-stats-badge');
     if (!container) return;
 
-    if (filterContainer) {
-      let filterHtml = `<button onclick="window.setRoadmapFilter('all')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${roadmapWeekFilter === 'all' ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">전체 (1~9주)</button>`;
-      for (let w = 1; w <= 9; w++) {
-        filterHtml += `<button onclick="window.setRoadmapFilter(${w})" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${roadmapWeekFilter === w ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${w}주차${w===9?'(총복습)':''}</button>`;
-      }
-      filterContainer.innerHTML = filterHtml;
+    // 1. Render Subject Filters
+    if (subjectFilterContainer) {
+      const subjectOptions = [
+        { id: 'all', label: '전체 과목', icon: '✨', activeClass: 'bg-purple-600 text-white shadow-xs' },
+        { id: '통합과학1', label: '통합과학 1', icon: '🔬', activeClass: 'bg-emerald-600 text-white shadow-xs' },
+        { id: '한국사1', label: '한국사 1', icon: '📜', activeClass: 'bg-amber-600 text-white shadow-xs' },
+        { id: '통합사회1', label: '통합사회 1', icon: '🌍', activeClass: 'bg-sky-600 text-white shadow-xs' },
+        { id: 'academy', label: '학원 일정 (영/수)', icon: '🏫', activeClass: 'bg-indigo-600 text-white shadow-xs' }
+      ];
+
+      subjectFilterContainer.innerHTML = subjectOptions.map(opt => {
+        const isActive = roadmapSubjectFilter === opt.id;
+        const btnClass = isActive ? opt.activeClass : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900';
+        return `
+          <button onclick="window.setRoadmapSubjectFilter('${opt.id}')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${btnClass}">
+            <span>${opt.icon}</span> ${opt.label}
+          </button>
+        `;
+      }).join('');
     }
 
+    // 2. Render Week Filters
+    if (weekFilterContainer) {
+      let filterHtml = `<button onclick="window.setRoadmapWeekFilter('all')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${roadmapWeekFilter === 'all' ? 'bg-purple-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">전체 (1~9주)</button>`;
+      for (let w = 1; w <= 9; w++) {
+        const isActive = roadmapWeekFilter === w;
+        filterHtml += `<button onclick="window.setRoadmapWeekFilter(${w})" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${isActive ? 'bg-purple-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${w}주차${w===9?'(총복습)':''}</button>`;
+      }
+      weekFilterContainer.innerHTML = filterHtml;
+    }
+
+    // 3. Filter Tasks by Subject & Week
     let filtered = tasks;
+
+    if (roadmapSubjectFilter !== 'all') {
+      if (roadmapSubjectFilter === 'academy') {
+        filtered = filtered.filter(t => t.isAcademy);
+      } else {
+        filtered = filtered.filter(t => t.subject === roadmapSubjectFilter && !t.isAcademy);
+      }
+    }
+
     if (roadmapWeekFilter !== 'all') {
-      filtered = tasks.filter(t => t.week === roadmapWeekFilter);
+      filtered = filtered.filter(t => t.week === roadmapWeekFilter);
+    }
+
+    // 4. Update Stats Badge
+    if (statsBadge) {
+      const completedCount = filtered.filter(t => t.status === 'completed').length;
+      const redCount = filtered.filter(t => t.understanding === 'red').length;
+      statsBadge.innerHTML = `
+        <span>조회: <strong>${filtered.length}개</strong></span>
+        <span class="mx-1.5 text-slate-300">|</span>
+        <span class="text-emerald-700 font-bold">완료 ${completedCount}개</span>
+        <span class="mx-1.5 text-slate-300">|</span>
+        <span class="text-rose-600 font-bold">🔴 헷갈림 ${redCount}개</span>
+      `;
+    }
+
+    // 5. Render Table Rows
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <tr>
+          <td colspan="8" class="text-center py-12 text-slate-400 font-medium bg-slate-50/50">
+            <div class="text-base mb-1">🔍</div>
+            선택한 조건(과목 및 주차)에 해당하는 학습 일정이 없습니다.
+          </td>
+        </tr>
+      `;
+      return;
     }
 
     container.innerHTML = filtered.map(t => {
@@ -1033,7 +1101,7 @@
           <td class="px-3 py-3 text-center whitespace-nowrap text-base">${lightIcon}</td>
           <td class="px-3 py-3 text-center whitespace-nowrap">${statusBadge}</td>
           <td class="px-3 py-3 text-right whitespace-nowrap">
-            <button onclick="window.selectCalendarDate('${t.plannedDate}'); window.switchTab('calendar');" class="text-xs text-purple-600 hover:text-purple-800 font-semibold underline">
+            <button onclick="window.selectCalendarDate('${t.plannedDate}'); window.switchTab('calendar');" class="text-xs text-purple-600 hover:text-purple-800 font-semibold underline cursor-pointer">
               상세보기
             </button>
           </td>
