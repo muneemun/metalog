@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>메타로그 (MetaLog) - 예비고1 63일 메타인지 트래커</title>
+  
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#7C3AED">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="메타로그">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+  <!-- Pretendard Web Font -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'Roboto', 'sans-serif'],
+          },
+          boxShadow: {
+            '2xs': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+            'xs': '0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.08)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <!-- Firebase SDK (Compat mode for static GitHub Pages) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #FAF8FD;
+      color: #1E293B;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F1F5F9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94A3B8;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-purple-100 selection:text-purple-900 pb-12">
+
+  <!-- Top Navigation & Role Switcher Bar -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-purple-100 shadow-xs">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-2 sm:gap-3 cursor-pointer" onclick="window.switchTab('calendar')">
+        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center text-white shadow-sm flex-shrink-0">
+          <svg class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path>
+            <path d="m9 10 2 2 4-4"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-base sm:text-lg font-extrabold tracking-tight bg-gradient-to-r from-purple-700 to-indigo-600 bg-clip-text text-transparent">
+              메타로그
+            </span>
+            <span class="text-[10px] sm:text-xs font-semibold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">
+              63일 완주
+            </span>
+          </div>
+          <p class="text-[10px] text-slate-400 hidden sm:block">예비고1 메타인지 학습 트래커</p>
+        </div>
+      </div>
+
+      <!-- Center / Status Actions -->
+      <div class="flex items-center gap-1.5 sm:gap-3">
+        <!-- Cloud Sync Badge (Clickable) -->
+        <button id="cloud-sync-badge" onclick="window.openSettingsModal()" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs hover:bg-slate-200 transition-colors">
+          <span id="cloud-sync-dot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+          <span id="cloud-sync-text" class="hidden xs:inline sm:inline">로컬 저장 모드</span>
+        </button>
+
+        <!-- Simulator / Test Date Button -->
+        <button onclick="window.openSimModal()" title="날짜 시뮬레이터 (테스트용)" class="p-1.5 sm:px-2.5 sm:py-1 rounded-lg sm:rounded-full text-xs font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 transition-colors flex items-center gap-1">
+          <span>🧪</span>
+          <span class="hidden sm:inline font-semibold">날짜 시뮬레이터</span>
+        </button>
+
+        <!-- Settings Button -->
+        <button onclick="window.openSettingsModal()" title="설정 및 백업" class="p-1.5 text-slate-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Role Switcher -->
+      <div class="bg-slate-100/80 p-0.5 sm:p-1 rounded-full flex items-center border border-slate-200">
+        <button id="role-btn-daughter" onclick="window.setRole('daughter')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all flex items-center gap-1">
+          <span>👧</span>
+          <span class="hidden sm:inline">딸 (학습자)</span>
+          <span class="sm:hidden">딸</span>
+        </button>
+        <button id="role-btn-mom" onclick="window.setRole('mom')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center gap-1">
+          <span>👩</span>
+          <span class="hidden sm:inline">엄마</span>
+          <span class="sm:hidden">엄마</span>
+        </button>
+        <button id="role-btn-dad" onclick="window.setRole('dad')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center gap-1">
+          <span>👨</span>
+          <span class="hidden sm:inline">아빠</span>
+          <span class="sm:hidden">아빠</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-4 sm:mt-6 space-y-6 flex-1 w-full">
+
+    <!-- Hero Self-Efficacy Dashboard Card -->
+    <section class="bg-gradient-to-br from-white via-purple-50/40 to-indigo-50/30 rounded-3xl p-5 sm:p-7 border border-purple-100 shadow-sm relative overflow-hidden">
+      <!-- Background subtle decorative circle -->
+      <div class="absolute -top-16 -right-16 w-52 h-52 bg-purple-200/40 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Top Row: Role Greeting & D-Day Badges -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 relative z-10">
+        <div>
+          <div class="flex flex-wrap items-center gap-2 mb-1.5">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700 border border-purple-200">
+              📅 2026.11.30 ~ 2027.01.31 (총 9주 / 63일)
+            </span>
+            <span id="hero-day-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+              진행 Day 1 / 63
+            </span>
+            <span id="hero-dday-badge" class="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-rose-500 text-white shadow-2xs">
+              D-63
+            </span>
+            <span id="hero-sim-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-violet-600 text-white hidden animate-pulse">
+              🧪 시뮬레이션
+            </span>
+          </div>
+          <h2 id="hero-greeting" class="text-base sm:text-xl font-bold text-slate-800 leading-snug">
+            오늘도 한 걸음 더! <span class="text-rose-600 font-bold">딸(학습자)</span>의 메타인지로 63일 완주를 향해 달려가요 🌸
+          </h2>
+        </div>
+
+        <!-- Overall Progress Percentage Counter -->
+        <div class="flex items-center gap-3 sm:gap-4 bg-white/90 p-3.5 sm:p-4 rounded-2xl border border-purple-100 shadow-xs flex-shrink-0">
+          <div>
+            <div class="text-[11px] font-bold text-slate-400">전체 완주율</div>
+            <div id="hero-total-percent" class="text-2xl sm:text-3xl font-black text-purple-700">0%</div>
+          </div>
+          <div class="h-10 w-px bg-slate-200"></div>
+          <div>
+            <div class="text-[11px] font-bold text-slate-400">완료 단원</div>
+            <div id="hero-total-count" class="text-xs sm:text-sm font-bold text-slate-700">0 / 63 단원</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Progress Bar -->
+      <div class="mt-4 relative z-10">
+        <div class="w-full h-3 bg-purple-100/70 rounded-full overflow-hidden p-0.5">
+          <div id="hero-progress-bar" class="h-full bg-gradient-to-r from-purple-500 via-indigo-500 to-emerald-400 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- 3 Subject Cards Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mt-5 relative z-10">
+        
+        <!-- Science -->
+        <div class="bg-white/95 rounded-2xl p-4 border border-emerald-100 shadow-2xs flex flex-col justify-between hover:shadow-xs transition-shadow">
+          <div class="flex items-center justify-between">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span>🔬</span> 통합과학 1
+            </span>
+            <span id="stat-science-percent" class="text-sm font-extrabold text-emerald-600">0%</span>
+          </div>
+          <div class="mt-3 flex items-center justify-between text-xs text-slate-600">
+            <span id="stat-science-count" class="font-medium">0 / 24 완료</span>
+            <span class="flex items-center gap-1 font-semibold text-rose-500">
+              🔴 헷갈림: <span id="stat-science-red" class="font-bold">0</span>개
+            </span>
+          </div>
+          <div class="mt-2 w-full h-1.5 bg-emerald-100 rounded-full overflow-hidden">
+            <div id="stat-science-bar" class="h-full bg-emerald-500 rounded-full transition-all" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- History -->
+        <div class="bg-white/95 rounded-2xl p-4 border border-amber-100 shadow-2xs flex flex-col justify-between hover:shadow-xs transition-shadow">
+          <div class="flex items-center justify-between">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+              <span>📜</span> 한국사 1
+            </span>
+            <span id="stat-history-percent" class="text-sm font-extrabold text-amber-600">0%</span>
+          </div>
+          <div class="mt-3 flex items-center justify-between text-xs text-slate-600">
+            <span id="stat-history-count" class="font-medium">0 / 16 완료</span>
+            <span class="flex items-center gap-1 font-semibold text-rose-500">
+              🔴 헷갈림: <span id="stat-history-red" class="font-bold">0</span>개
+            </span>
+          </div>
+          <div class="mt-2 w-full h-1.5 bg-amber-100 rounded-full overflow-hidden">
+            <div id="stat-history-bar" class="h-full bg-amber-500 rounded-full transition-all" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Society -->
+        <div class="bg-white/95 rounded-2xl p-4 border border-sky-100 shadow-2xs flex flex-col justify-between hover:shadow-xs transition-shadow">
+          <div class="flex items-center justify-between">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-700 border border-sky-200">
+              <span>🌍</span> 통합사회 1
+            </span>
+            <span id="stat-society-percent" class="text-sm font-extrabold text-sky-600">0%</span>
+          </div>
+          <div class="mt-3 flex items-center justify-between text-xs text-slate-600">
+            <span id="stat-society-count" class="font-medium">0 / 16 완료</span>
+            <span class="flex items-center gap-1 font-semibold text-rose-500">
+              🔴 헷갈림: <span id="stat-society-red" class="font-bold">0</span>개
+            </span>
+          </div>
+          <div class="mt-2 w-full h-1.5 bg-sky-100 rounded-full overflow-hidden">
+            <div id="stat-society-bar" class="h-full bg-sky-500 rounded-full transition-all" style="width: 0%"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Navigation Tabs Bar -->
+    <div class="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
+      <button id="tab-btn-calendar" onclick="window.switchTab('calendar')" class="px-4 py-2 rounded-xl text-sm font-bold bg-purple-600 text-white shadow-xs transition-all flex items-center gap-1.5 whitespace-nowrap">
+        <span>📅</span> 캘린더 & 오늘 학습
+      </button>
+      <button id="tab-btn-metacognition" onclick="window.switchTab('metacognition')" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all flex items-center gap-1.5 whitespace-nowrap">
+        <span>🚦</span> 메타인지 오답 노트
+      </button>
+      <button id="tab-btn-roadmap" onclick="window.switchTab('roadmap')" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all flex items-center gap-1.5 whitespace-nowrap">
+        <span>🗺️</span> 전체 63일 로드맵
+      </button>
+    </div>
+
+    <!-- TAB 1: CALENDAR & DAILY TASKS -->
+    <div id="tab-content-calendar" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- Left Column: Calendar (lg:col-span-6 or 7) -->
+      <section class="lg:col-span-6 xl:col-span-6 bg-white rounded-3xl p-4 sm:p-6 border border-slate-200 shadow-sm">
+        
+        <!-- Calendar Header -->
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <h3 id="calendar-month-title" class="text-lg sm:text-xl font-bold text-slate-800">2026년 12월</h3>
+            <button onclick="window.goToTodayCalendar()" class="px-2.5 py-1 text-xs font-semibold bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-lg transition-colors">
+              오늘
+            </button>
+          </div>
+          <div class="flex items-center gap-1">
+            <button onclick="window.changeCalendarMonth(-1)" class="p-1.5 text-slate-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors" title="이전 달">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <button onclick="window.changeCalendarMonth(1)" class="p-1.5 text-slate-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors" title="다음 달">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Subject Dot Legend -->
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 mb-3 pb-3 border-b border-slate-100 font-medium">
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> 과학(화/금/토)</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> 한국사(월/수)</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-sky-500"></span> 사회(목/일)</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-purple-500"></span> 영어학원</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span> 수학학원</span>
+        </div>
+
+        <!-- Weekdays Header -->
+        <div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-400 mb-2">
+          <span class="text-rose-500">일</span>
+          <span>월</span>
+          <span>화</span>
+          <span>수</span>
+          <span>목</span>
+          <span>금</span>
+          <span class="text-blue-500">토</span>
+        </div>
+
+        <!-- Calendar Grid Cells -->
+        <div id="calendar-grid" class="grid grid-cols-7 gap-1 sm:gap-1.5">
+          <!-- Populated by JS -->
+        </div>
+
+      </section>
+
+      <!-- Right Column: Daily Tasks Details (lg:col-span-6) -->
+      <section class="lg:col-span-6 xl:col-span-6 space-y-4">
+        
+        <!-- Header for Selected Date -->
+        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs flex items-center justify-between">
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 id="daily-header-date" class="text-base sm:text-lg font-bold text-slate-800">2026년 11월 30일</h3>
+              <span id="daily-header-info" class="text-xs font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md">
+                (월요일) · 1주차 · Day 1 / 63
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">클릭한 날짜의 학습 진도 및 메타인지 기록</p>
+          </div>
+
+          <button onclick="window.openAddTaskModal()" class="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1 shadow-2xs">
+            <span>+</span> 추가 학습
+          </button>
+        </div>
+
+        <!-- Cards List Container -->
+        <div id="daily-tasks-container" class="space-y-4">
+          <!-- Populated by JS -->
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- TAB 2: METACOGNITION NOTES (Traffic Light Filter View) -->
+    <div id="tab-content-metacognition" class="hidden space-y-6">
+      
+      <!-- Top Action Bar -->
+      <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h3 class="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
+            <span>🚦 메타인지 오답 & 질문 인출 보관함</span>
+          </h3>
+          <p class="text-xs sm:text-sm text-slate-500 mt-1">
+            이해도 신호등(🟢/🟡/🔴)별로 정리된 단원과 딸아이의 한 줄 메타인지 메모를 한눈에 검토하세요.
+          </p>
+        </div>
+
+        <!-- Copy Markdown Report Button -->
+        <button onclick="window.copyMarkdownReport()" class="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs flex items-center justify-center gap-2 flex-shrink-0">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+          📋 전체 학습 리포트 마크다운 복사
+        </button>
+      </div>
+
+      <!-- Filter Buttons Bar -->
+      <div id="metanotes-filter-bar" class="flex flex-wrap items-center gap-2">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Notes Grid -->
+      <div id="metanotes-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Populated by JS -->
+      </div>
+
+    </div>
+
+    <!-- TAB 3: FULL ROADMAP VIEW -->
+    <div id="tab-content-roadmap" class="hidden space-y-6">
+      
+      <!-- Week Filter Buttons -->
+      <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-base sm:text-lg font-bold text-slate-800">
+            🗺️ 63일 전체 커리큘럼 로드맵 (비상 완자 1학기 3과목 + 학원)
+          </h3>
+        </div>
+        <div id="roadmap-week-filters" class="flex flex-wrap items-center gap-1.5">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Roadmap Table -->
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-bold">
+                <th class="px-3 py-3 whitespace-nowrap">주차</th>
+                <th class="px-3 py-3 whitespace-nowrap">예정일</th>
+                <th class="px-3 py-3 whitespace-nowrap">과목</th>
+                <th class="px-3 py-3">단원 명칭</th>
+                <th class="px-3 py-3 text-center whitespace-nowrap">이해도</th>
+                <th class="px-3 py-3 text-center whitespace-nowrap">상태</th>
+                <th class="px-3 py-3 text-right whitespace-nowrap">동작</th>
+              </tr>
+            </thead>
+            <tbody id="roadmap-table-body" class="divide-y divide-slate-100">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- MODAL: Reschedule / Edit Date Modal -->
+  <div id="reschedule-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-slate-800">📅 일정 이동 & 완료일 수정</h3>
+        <button onclick="window.closeRescheduleModal()" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
+      </div>
+
+      <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 truncate" id="reschedule-task-title">
+        단원 명칭
+      </div>
+
+      <!-- Quick Shortcuts -->
+      <div class="space-y-1.5">
+        <label class="text-xs font-bold text-slate-600 block">빠른 예정일 변경</label>
+        <div class="grid grid-cols-3 gap-2">
+          <button onclick="window.rescheduleShortcut('tomorrow')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 border border-slate-200 rounded-lg text-xs font-medium transition-colors">
+            내일로 이동
+          </button>
+          <button onclick="window.rescheduleShortcut('nextWeek')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 border border-slate-200 rounded-lg text-xs font-medium transition-colors">
+            다음 주로 이동
+          </button>
+          <button onclick="window.rescheduleShortcut('week9')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 border border-slate-200 rounded-lg text-xs font-medium transition-colors">
+            9주차 복습주간
+          </button>
+        </div>
+      </div>
+
+      <!-- Date Inputs -->
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1">학습 예정일</label>
+          <input type="date" id="reschedule-planned-date" class="w-full text-sm px-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-400">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1">실제 완료일 (완료 시 날짜 지정)</label>
+          <input type="date" id="reschedule-completed-date" class="w-full text-sm px-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-400">
+          <span class="text-[11px] text-slate-400 mt-0.5 block">완료일을 지정하면 자동으로 완료 상태로 전환됩니다.</span>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+        <button onclick="window.closeRescheduleModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+          취소
+        </button>
+        <button onclick="window.saveRescheduleModal()" class="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition-colors shadow-xs">
+          저장 적용
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Add Custom Task Modal -->
+  <div id="add-task-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-slate-800">➕ 추가 학습 / 보충 일정 등록</h3>
+        <button onclick="window.closeAddTaskModal()" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1">과목 선택</label>
+          <select id="new-task-subject" class="w-full text-sm px-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-400">
+            <option value="통합과학1">통합과학 1</option>
+            <option value="한국사1">한국사 1</option>
+            <option value="통합사회1">통합사회 1</option>
+            <option value="영어학원">영어 학원 보충</option>
+            <option value="수학학원">수학 학원 보충</option>
+            <option value="자율학습">기타 자율 학습</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1">단원 또는 학습 제목 *</label>
+          <input type="text" id="new-task-title" placeholder="예: [보충] 역학 시스템 고난도 기출 10문항" class="w-full text-sm px-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-400">
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1">학습 내용 요약</label>
+          <textarea id="new-task-summary" rows="2" placeholder="공부할 세부 내용이나 목표를 간단히 작성하세요." class="w-full text-sm px-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-400"></textarea>
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1">예정일</label>
+          <input type="date" id="new-task-date" class="w-full text-sm px-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-400">
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+        <button onclick="window.closeAddTaskModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+          취소
+        </button>
+        <button onclick="window.saveCustomTask()" class="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition-colors shadow-xs">
+          등록하기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Settings & Cloud Sync Modal -->
+  <div id="settings-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-xl border border-slate-200 space-y-5 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-slate-800">⚙️ 데이터 설정 & 클라우드 실시간 동기화</h3>
+        <button onclick="window.closeSettingsModal()" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
+      </div>
+
+      <!-- Cloud Sync Section -->
+      <div class="p-4 bg-purple-50/70 rounded-2xl border border-purple-100 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-bold text-purple-900 flex items-center gap-1.5">
+            <span>☁️</span> Firebase 실시간 동기화 (3인 가족 공유)
+          </span>
+        </div>
+        <p class="text-xs text-slate-600 leading-relaxed">
+          Firebase Firestore의 <code>firebaseConfig</code> 객체 JSON을 아래에 붙여넣으면 딸, 엄마, 아빠의 모든 기기에서 실시간 동기화됩니다. 비워두면 기기별 독립 로컬 모드로 작동합니다.
+        </p>
+        <textarea id="settings-firebase-config" rows="5" placeholder='{"apiKey": "AIzaSy...", "authDomain": "...", "projectId": "...", "storageBucket": "...", "messagingSenderId": "...", "appId": "..."}' class="w-full font-mono text-xs p-3 rounded-xl border border-purple-200 bg-white focus:outline-none focus:ring-2 focus:ring-purple-400"></textarea>
+        <button onclick="window.saveFirebaseConfig()" class="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition-colors shadow-2xs">
+          설정 저장 및 실시간 동기화 시작
+        </button>
+      </div>
+
+      <!-- Backup / Restore Section -->
+      <div class="space-y-3">
+        <h4 class="text-xs font-bold text-slate-700">💾 데이터 백업 및 복원</h4>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="window.exportBackupJSON()" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5">
+            <span>📥</span> JSON 백업 다운로드
+          </button>
+          <label class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+            <span>📤</span> JSON 백업 복원
+            <input type="file" accept=".json" onchange="window.importBackupJSON(event)" class="hidden">
+          </label>
+        </div>
+      </div>
+
+      <!-- Danger Reset -->
+      <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+        <span class="text-xs text-slate-400">데이터를 처음 상태로 되돌립니다.</span>
+        <button onclick="window.resetToDefaultCurriculum()" class="px-3 py-1.5 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold transition-colors">
+          기본 커리큘럼으로 초기화
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: Simulator Modal -->
+  <div id="sim-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-slate-800">🧪 날짜 시뮬레이터 / 프리뷰</h3>
+        <button onclick="window.closeSimModal()" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
+      </div>
+
+      <p class="text-xs text-slate-500 leading-relaxed">
+        프로젝트 시작일(2026.11.30) 이전이라도 원하는 날짜나 주차로 기준일을 변경하여 D-Day, 일일 카드, 캘린더 동작을 미리 체험해 볼 수 있습니다.
+      </p>
+
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="window.setSimulatedDate('2026-11-30')" class="p-3 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl text-left text-xs font-semibold text-purple-900 transition-colors">
+          🚩 Day 1 시작일
+          <span class="block text-[10px] text-purple-600 font-normal">2026.11.30 (한국사 1강)</span>
+        </button>
+        <button onclick="window.setSimulatedDate('2026-12-15')" class="p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-left text-xs font-semibold text-slate-800 transition-colors">
+          🎯 Day 16 (3주차)
+          <span class="block text-[10px] text-slate-500 font-normal">2026.12.15 (과학 대단원점검)</span>
+        </button>
+        <button onclick="window.setSimulatedDate('2027-01-01')" class="p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-left text-xs font-semibold text-slate-800 transition-colors">
+          ☀️ 새해 첫날 (5주차)
+          <span class="block text-[10px] text-slate-500 font-normal">2027.01.01 (과학 효소)</span>
+        </button>
+        <button onclick="window.setSimulatedDate('2027-01-25')" class="p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-left text-xs font-semibold text-slate-800 transition-colors">
+          🏥 9주차 총복습
+          <span class="block text-[10px] text-slate-500 font-normal">2027.01.25 (메타인지 클리닉)</span>
+        </button>
+        <button onclick="window.setSimulatedDate('2027-01-31')" class="p-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl text-left text-xs font-semibold text-emerald-900 transition-colors">
+          🎉 Day 63 완주 D-Day
+          <span class="block text-[10px] text-emerald-600 font-normal">2027.01.31 (완주 피날레)</span>
+        </button>
+        <button onclick="window.setSimulatedDate(null)" class="p-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl text-left text-xs font-semibold text-rose-900 transition-colors">
+          🔄 실제 오늘 날짜로 복귀
+          <span class="block text-[10px] text-rose-600 font-normal">시스템 현재 시간 적용</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

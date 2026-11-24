@@ -1,0 +1,1337 @@
+/**
+ * MetaLog (메타로그) - Core Application Logic
+ * Supports: LocalStorage, Firebase Firestore real-time sync, PWA, Multi-role (딸, 엄마, 아빠)
+ */
+
+(() => {
+  // --- Constants & Storage Keys ---
+  const STORAGE_KEYS = {
+    TASKS: 'metalog_tasks_v1',
+    ROLE: 'metalog_current_role',
+    FIREBASE_CONFIG: 'metalog_firebase_config',
+    SIMULATED_DATE: 'metalog_simulated_date',
+    ACTIVE_TAB: 'metalog_active_tab',
+    CALENDAR_MONTH: 'metalog_calendar_month'
+  };
+
+  const DEFAULT_START_DATE = '2026-11-30';
+  const DEFAULT_END_DATE = '2027-01-31';
+
+  // --- State ---
+  let tasks = [];
+  let currentRole = localStorage.getItem(STORAGE_KEYS.ROLE) || 'daughter'; // 'daughter' | 'mom' | 'dad'
+  let activeTab = localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB) || 'calendar'; // 'calendar' | 'metacognition' | 'roadmap'
+  let metaFilter = 'all'; // 'all' | 'red' | 'yellow' | 'green' | 'academy'
+  let roadmapWeekFilter = 'all'; // 'all' | 1..9
+  let selectedDate = DEFAULT_START_DATE;
+  let simulatedDate = localStorage.getItem(STORAGE_KEYS.SIMULATED_DATE) || null;
+  let currentCalendarMonth = new Date(2026, 11, 1); // December 2026 default
+
+  // Firebase state
+  let db = null;
+  let unsubscribeSnapshot = null;
+  let isCloudSyncing = false;
+
+  // --- Utility Functions ---
+  const getTodayDateStr = () => {
+    if (simulatedDate) return simulatedDate;
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  const formatDateKr = (dateStr) => {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-');
+    return `${y}년 ${parseInt(m)}월 ${parseInt(d)}일`;
+  };
+
+  const getDayDiff = (dateStr1, dateStr2) => {
+    const d1 = new Date(dateStr1);
+    const d2 = new Date(dateStr2);
+    const diffTime = d2.getTime() - d1.getTime();
+    return Math.round(diffTime / (1000 * 3600 * 24));
+  };
+
+  // --- Initialization ---
+  function initApp() {
+    loadLocalTasks();
+    initCalendarMonth();
+    initFirebaseIfConfigured();
+    setupEventListeners();
+    registerServiceWorker();
+    renderAll();
+  }
+
+  function initCalendarMonth() {
+    const today = getTodayDateStr();
+    selectedDate = today;
+    const [y, m] = today.split('-').map(Number);
+    // If today is in Nov 2026, Dec 2026, or Jan 2027, show that month
+    if (y === 2026 && (m === 11 || m === 12)) {
+      currentCalendarMonth = new Date(y, m - 1, 1);
+    } else if (y === 2027 && m === 1) {
+      currentCalendarMonth = new Date(2027, 0, 1);
+    } else {
+      currentCalendarMonth = new Date(2026, 11, 1); // 2026 Dec
+      selectedDate = DEFAULT_START_DATE;
+    }
+  }
+
+  function loadLocalTasks() {
+    const saved = localStorage.getItem(STORAGE_KEYS.TASKS);
+    if (saved) {
+      try {
+        tasks = JSON.parse(saved);
+        return;
+      } catch (e) {
+        console.error('Error parsing stored tasks, resetting to initial', e);
+      }
+    }
+    // Load from window.INITIAL_CURRICULUM
+    if (window.INITIAL_CURRICULUM && Array.isArray(window.INITIAL_CURRICULUM)) {
+      tasks = JSON.parse(JSON.stringify(window.INITIAL_CURRICULUM));
+      saveTasksLocally();
+    }
+  }
+
+  function saveTasksLocally() {
+    localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
+  }
+
+  function saveAndSyncTasks() {
+    saveTasksLocally();
+    if (db && !isCloudSyncing) {
+      pushToCloud();
+    }
+    renderAll();
+  }
+
+  // --- Firebase Cloud Sync ---
+  function initFirebaseIfConfigured() {
+    const rawConfig = localStorage.getItem(STORAGE_KEYS.FIREBASE_CONFIG);
+    if (!rawConfig) {
+      updateSyncStatusUI('local');
+      return;
+    }
+
+    try {
+      const config = JSON.parse(rawConfig);
+      if (!config.apiKey || !config.projectId) {
+        updateSyncStatusUI('local');
+        return;
+      }
+
+      updateSyncStatusUI('connecting');
+
+      if (!firebase.apps.length) {
+        firebase.initializeApp(config);
+      }
+      db = firebase.firestore();
+
+      // Listen to real-time changes
+      const docRef = db.collection('metalog_family').doc('shared_curriculum');
+
+      if (unsubscribeSnapshot) unsubscribeSnapshot();
+
+      unsubscribeSnapshot = docRef.onSnapshot((doc) => {
+        if (doc.exists) {
+          const remoteData = doc.data();
+          if (remoteData && Array.isArray(remoteData.tasks)) {
+            isCloudSyncing = true;
+            tasks = remoteData.tasks;
+            saveTasksLocally();
+            renderAll();
+            isCloudSyncing = false;
+            updateSyncStatusUI('synced');
+          }
+        } else {
+          // Document doesn't exist yet, push current local tasks
+          pushToCloud();
+          updateSyncStatusUI('synced');
+        }
+      }, (err) => {
+        console.error('Firestore snapshot error:', err);
+        updateSyncStatusUI('error', err.message);
+      });
+
+    } catch (e) {
+      console.error('Firebase init error:', e);
+      updateSyncStatusUI('error', e.message);
+    }
+  }
+
+  function pushToCloud() {
+    if (!db) return;
+    updateSyncStatusUI('connecting');
+    db.collection('metalog_family').doc('shared_curriculum').set({
+      tasks: tasks,
+      lastUpdated: new Date().toISOString(),
+      updatedBy: currentRole
+    }, { merge: true })
+    .then(() => {
+      updateSyncStatusUI('synced');
+    })
+    .catch((err) => {
+      console.error('Firestore push error:', err);
+      updateSyncStatusUI('error', err.message);
+    });
+  }
+
+  function updateSyncStatusUI(status, message = '') {
+    const badge = document.getElementById('cloud-sync-badge');
+    const statusText = document.getElementById('cloud-sync-text');
+    const dot = document.getElementById('cloud-sync-dot');
+
+    if (!badge || !statusText || !dot) return;
+
+    if (status === 'synced') {
+      badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm cursor-pointer hover:bg-emerald-100 transition-colors';
+      dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+      statusText.textContent = '클라우드 실시간 동기화';
+    } else if (status === 'connecting') {
+      badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 shadow-sm cursor-pointer hover:bg-amber-100 transition-colors';
+      dot.className = 'w-2 h-2 rounded-full bg-amber-500 animate-ping';
+      statusText.textContent = '동기화 연결 중...';
+    } else if (status === 'error') {
+      badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200 shadow-sm cursor-pointer hover:bg-rose-100 transition-colors';
+      dot.className = 'w-2 h-2 rounded-full bg-rose-500';
+      statusText.textContent = '동기화 오류';
+    } else {
+      // Local
+      badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200 shadow-sm cursor-pointer hover:bg-slate-200 transition-colors';
+      dot.className = 'w-2 h-2 rounded-full bg-slate-400';
+      statusText.textContent = '로컬 저장 모드';
+    }
+  }
+
+  // --- Role Switcher ---
+  window.setRole = function(role) {
+    currentRole = role;
+    localStorage.setItem(STORAGE_KEYS.ROLE, role);
+    renderRoleSwitcher();
+    renderHeroBanner();
+    renderDailyCards();
+  };
+
+  function renderRoleSwitcher() {
+    const roles = ['daughter', 'mom', 'dad'];
+    roles.forEach(r => {
+      const btn = document.getElementById(`role-btn-${r}`);
+      if (!btn) return;
+      if (r === currentRole) {
+        if (r === 'daughter') {
+          btn.className = 'px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold bg-rose-500 text-white shadow-sm ring-2 ring-rose-200 flex items-center gap-1.5';
+        } else if (r === 'mom') {
+          btn.className = 'px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold bg-amber-500 text-white shadow-sm ring-2 ring-amber-200 flex items-center gap-1.5';
+        } else {
+          btn.className = 'px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-200 flex items-center gap-1.5';
+        }
+      } else {
+        btn.className = 'px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors flex items-center gap-1.5';
+      }
+    });
+  }
+
+  // --- Hero & Progress Calculations ---
+  function calculateStats() {
+    const regularTasks = tasks.filter(t => !t.isAcademy);
+    const totalRegular = regularTasks.length;
+    const completedRegular = regularTasks.filter(t => t.status === 'completed').length;
+    const totalPercent = totalRegular > 0 ? Math.round((completedRegular / totalRegular) * 100) : 0;
+
+    // Subjects
+    const getSubjectStats = (subjName) => {
+      const subTasks = tasks.filter(t => t.subject === subjName && !t.isAcademy);
+      const total = subTasks.length;
+      const completed = subTasks.filter(t => t.status === 'completed').length;
+      const redCount = subTasks.filter(t => t.understanding === 'red').length;
+      const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+      return { total, completed, redCount, percent };
+    };
+
+    const science = getSubjectStats('통합과학1');
+    const history = getSubjectStats('한국사1');
+    const society = getSubjectStats('통합사회1');
+
+    // Academies
+    const engAcad = tasks.filter(t => t.isAcademy && t.academyType === 'english');
+    const engDone = engAcad.filter(t => t.homeworkDone || t.status === 'completed').length;
+    const mathAcad = tasks.filter(t => t.isAcademy && t.academyType === 'math');
+    const mathDone = mathAcad.filter(t => t.homeworkDone || t.status === 'completed').length;
+
+    // Total Metacognitive lights
+    const redTotal = tasks.filter(t => t.understanding === 'red').length;
+    const yellowTotal = tasks.filter(t => t.understanding === 'yellow').length;
+    const greenTotal = tasks.filter(t => t.understanding === 'green').length;
+
+    // Days & D-Day
+    const todayStr = getTodayDateStr();
+    const diffFromStart = getDayDiff(DEFAULT_START_DATE, todayStr) + 1;
+    const dayProgress = Math.max(1, Math.min(63, diffFromStart));
+    const diffToEnd = getDayDiff(todayStr, DEFAULT_END_DATE);
+    const dDayText = diffToEnd < 0 ? '완주 완료 🎉' : (diffToEnd === 0 ? 'D-Day (오늘 완주!)' : `D-${diffToEnd}`);
+
+    return {
+      totalRegular,
+      completedRegular,
+      totalPercent,
+      science,
+      history,
+      society,
+      engAcadTotal: engAcad.length,
+      engDone,
+      mathAcadTotal: mathAcad.length,
+      mathDone,
+      redTotal,
+      yellowTotal,
+      greenTotal,
+      dayProgress,
+      dDayText,
+      todayStr
+    };
+  }
+
+  function renderHeroBanner() {
+    const stats = calculateStats();
+    
+    // Greeting
+    const greetingEl = document.getElementById('hero-greeting');
+    if (greetingEl) {
+      if (currentRole === 'daughter') {
+        greetingEl.innerHTML = `오늘도 한 걸음 더! <span class="text-rose-600 font-bold">딸(학습자)</span>의 메타인지로 63일 완주를 향해 달려가요 🌸`;
+      } else if (currentRole === 'mom') {
+        greetingEl.innerHTML = `오늘 딸아이의 멋진 도전을 응원해 주세요! <span class="text-amber-600 font-bold">엄마</span>의 사랑 가득 칭찬 스탬프를 꾹 눌러주세요 💖`;
+      } else {
+        greetingEl.innerHTML = `꾸준함이 최고의 실력! 든든한 서포터 <span class="text-indigo-600 font-bold">아빠</span>가 언제나 함께해요 👨‍👧`;
+      }
+    }
+
+    // Days & D-Day
+    const dayBadge = document.getElementById('hero-day-badge');
+    const ddayBadge = document.getElementById('hero-dday-badge');
+    if (dayBadge) dayBadge.textContent = `진행 Day ${stats.dayProgress} / 63`;
+    if (ddayBadge) ddayBadge.textContent = stats.dDayText;
+
+    // Simulation alert badge
+    const simBadge = document.getElementById('hero-sim-badge');
+    if (simBadge) {
+      if (simulatedDate) {
+        simBadge.classList.remove('hidden');
+        simBadge.textContent = `🧪 날짜 시뮬레이션: ${simulatedDate}`;
+      } else {
+        simBadge.classList.add('hidden');
+      }
+    }
+
+    // Overall Progress Bar
+    const totalPercentEl = document.getElementById('hero-total-percent');
+    const totalCountEl = document.getElementById('hero-total-count');
+    const progressBar = document.getElementById('hero-progress-bar');
+    if (totalPercentEl) totalPercentEl.textContent = `${stats.totalPercent}%`;
+    if (totalCountEl) totalCountEl.textContent = `${stats.completedRegular} / ${stats.totalRegular} 단원 완료`;
+    if (progressBar) progressBar.style.width = `${stats.totalPercent}%`;
+
+    // Subject Cards
+    // Science
+    const scPercent = document.getElementById('stat-science-percent');
+    const scCount = document.getElementById('stat-science-count');
+    const scRed = document.getElementById('stat-science-red');
+    const scBar = document.getElementById('stat-science-bar');
+    if (scPercent) scPercent.textContent = `${stats.science.percent}%`;
+    if (scCount) scCount.textContent = `${stats.science.completed} / ${stats.science.total} 완료`;
+    if (scRed) scRed.textContent = stats.science.redCount;
+    if (scBar) scBar.style.width = `${stats.science.percent}%`;
+
+    // History
+    const hiPercent = document.getElementById('stat-history-percent');
+    const hiCount = document.getElementById('stat-history-count');
+    const hiRed = document.getElementById('stat-history-red');
+    const hiBar = document.getElementById('stat-history-bar');
+    if (hiPercent) hiPercent.textContent = `${stats.history.percent}%`;
+    if (hiCount) hiCount.textContent = `${stats.history.completed} / ${stats.history.total} 완료`;
+    if (hiRed) hiRed.textContent = stats.history.redCount;
+    if (hiBar) hiBar.style.width = `${stats.history.percent}%`;
+
+    // Society
+    const soPercent = document.getElementById('stat-society-percent');
+    const soCount = document.getElementById('stat-society-count');
+    const soRed = document.getElementById('stat-society-red');
+    const soBar = document.getElementById('stat-society-bar');
+    if (soPercent) soPercent.textContent = `${stats.society.percent}%`;
+    if (soCount) soCount.textContent = `${stats.society.completed} / ${stats.society.total} 완료`;
+    if (soRed) soRed.textContent = stats.society.redCount;
+    if (soBar) soBar.style.width = `${stats.society.percent}%`;
+  }
+
+  // --- Calendar Component ---
+  function renderCalendar() {
+    const calendarGrid = document.getElementById('calendar-grid');
+    const calendarMonthTitle = document.getElementById('calendar-month-title');
+    if (!calendarGrid || !calendarMonthTitle) return;
+
+    const year = currentCalendarMonth.getFullYear();
+    const month = currentCalendarMonth.getMonth(); // 0-indexed
+    calendarMonthTitle.textContent = `${year}년 ${month + 1}월`;
+
+    // Days in current month
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDayOfWeek = firstDay.getDay(); // 0 (Sun) to 6 (Sat)
+    const daysInMonth = lastDay.getDate();
+
+    let html = '';
+
+    // Empty cells before start of month
+    for (let i = 0; i < startDayOfWeek; i++) {
+      html += `<div class="min-h-[72px] sm:min-h-[88px] p-1 bg-slate-50/50 rounded-lg border border-transparent opacity-30"></div>`;
+    }
+
+    const todayStr = getTodayDateStr();
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const isSelected = dateStr === selectedDate;
+      const isToday = dateStr === todayStr;
+      const dayTasks = tasks.filter(t => t.plannedDate === dateStr);
+      
+      const allDone = dayTasks.length > 0 && dayTasks.every(t => t.status === 'completed');
+      const hasRed = dayTasks.some(t => t.understanding === 'red');
+      const hasYellow = dayTasks.some(t => t.understanding === 'yellow');
+
+      // Date number color
+      const dateObj = new Date(year, month, day);
+      const dayOfWeek = dateObj.getDay();
+      let dayColorClass = 'text-slate-700';
+      if (dayOfWeek === 0) dayColorClass = 'text-rose-500 font-medium'; // Sun
+      if (dayOfWeek === 6) dayColorClass = 'text-blue-500 font-medium'; // Sat
+
+      // Cell border / background
+      let cellClass = 'relative min-h-[72px] sm:min-h-[92px] p-1.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ';
+      if (isSelected) {
+        cellClass += 'bg-purple-50/90 border-purple-400 ring-2 ring-purple-300 shadow-sm ';
+      } else if (isToday) {
+        cellClass += 'bg-amber-50/60 border-amber-300 shadow-xs ';
+      } else {
+        cellClass += 'bg-white border-slate-100 hover:border-purple-200 hover:bg-slate-50/80 ';
+      }
+
+      html += `
+        <div class="${cellClass}" onclick="window.selectCalendarDate('${dateStr}')">
+          <div class="flex items-center justify-between">
+            <span class="text-xs sm:text-sm font-bold ${dayColorClass} ${isToday ? 'w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-xs' : ''}">
+              ${day}
+            </span>
+            ${allDone ? '<span class="text-emerald-500 text-xs font-bold">✓</span>' : ''}
+          </div>
+          <div class="mt-1 flex flex-col gap-1 overflow-hidden">
+      `;
+
+      // Render dots or mini pills for day tasks
+      dayTasks.slice(0, 3).forEach(task => {
+        let dotColor = 'bg-slate-400';
+        let subjInitial = '학';
+        if (task.subject === '통합과학1') {
+          dotColor = 'bg-emerald-500';
+          subjInitial = '과';
+        } else if (task.subject === '한국사1') {
+          dotColor = 'bg-amber-500';
+          subjInitial = '사';
+        } else if (task.subject === '통합사회1') {
+          dotColor = 'bg-sky-500';
+          subjInitial = '통';
+        } else if (task.isAcademy && task.academyType === 'english') {
+          dotColor = 'bg-purple-500';
+          subjInitial = '영';
+        } else if (task.isAcademy && task.academyType === 'math') {
+          dotColor = 'bg-rose-500';
+          subjInitial = '수';
+        } else if (task.isClinic) {
+          dotColor = 'bg-fuchsia-500';
+          subjInitial = '클';
+        }
+
+        const isCompleted = task.status === 'completed';
+        const strikethrough = isCompleted ? 'line-through opacity-60' : '';
+
+        html += `
+          <div class="flex items-center gap-1 text-[10px] leading-tight truncate">
+            <span class="w-1.5 h-1.5 rounded-full ${dotColor} flex-shrink-0"></span>
+            <span class="truncate text-slate-600 ${strikethrough}">${task.unit.replace(/^\[.*?\]\s*/, '')}</span>
+          </div>
+        `;
+      });
+
+      if (dayTasks.length > 3) {
+        html += `<span class="text-[9px] text-slate-400 font-semibold">+${dayTasks.length - 3}</span>`;
+      }
+
+      html += `
+          </div>
+        </div>
+      `;
+    }
+
+    calendarGrid.innerHTML = html;
+  }
+
+  window.selectCalendarDate = function(dateStr) {
+    selectedDate = dateStr;
+    renderCalendar();
+    renderDailyCards();
+  };
+
+  window.changeCalendarMonth = function(delta) {
+    currentCalendarMonth = new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() + delta, 1);
+    renderCalendar();
+  };
+
+  window.goToTodayCalendar = function() {
+    const today = getTodayDateStr();
+    selectedDate = today;
+    const [y, m] = today.split('-').map(Number);
+    currentCalendarMonth = new Date(y, m - 1, 1);
+    renderCalendar();
+    renderDailyCards();
+  };
+
+  // --- Daily Cards Component ---
+  function renderDailyCards() {
+    const container = document.getElementById('daily-tasks-container');
+    const headerDate = document.getElementById('daily-header-date');
+    const headerInfo = document.getElementById('daily-header-info');
+
+    if (!container || !headerDate) return;
+
+    headerDate.textContent = formatDateKr(selectedDate);
+
+    // Find date metadata
+    const sampleTask = tasks.find(t => t.date === selectedDate || t.plannedDate === selectedDate);
+    const dayOfWeek = sampleTask ? sampleTask.weekday : ['일','월','화','수','목','금','토'][new Date(selectedDate).getDay()];
+    const dayDiff = getDayDiff(DEFAULT_START_DATE, selectedDate) + 1;
+    const weekNum = Math.ceil(dayDiff / 7);
+
+    if (headerInfo) {
+      if (dayDiff >= 1 && dayDiff <= 63) {
+        headerInfo.textContent = `(${dayOfWeek}요일) · ${weekNum}주차 · Day ${dayDiff} / 63`;
+      } else {
+        headerInfo.textContent = `(${dayOfWeek}요일)`;
+      }
+    }
+
+    const currentTasks = tasks.filter(t => t.plannedDate === selectedDate);
+
+    if (currentTasks.length === 0) {
+      container.innerHTML = `
+        <div class="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+          <p class="text-slate-500 font-medium">선택한 날짜에 예정된 학습이 없습니다.</p>
+          <p class="text-xs text-slate-400 mt-1">상단의 [+ 추가 학습/보충 등록] 버튼을 눌러 새 일정을 추가할 수 있습니다.</p>
+        </div>
+      `;
+      return;
+    }
+
+    let cardsHtml = '';
+
+    currentTasks.forEach(task => {
+      const isCompleted = task.status === 'completed';
+      const isAcademy = task.isAcademy;
+      const isClinic = task.isClinic;
+
+      // Badges & Colors
+      let subjectBadge = 'bg-slate-100 text-slate-800 border-slate-200';
+      if (task.subject === '통합과학1') subjectBadge = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      if (task.subject === '한국사1') subjectBadge = 'bg-amber-100 text-amber-800 border-amber-200';
+      if (task.subject === '통합사회1') subjectBadge = 'bg-sky-100 text-sky-800 border-sky-200';
+      if (task.subject === '영어학원') subjectBadge = 'bg-purple-100 text-purple-800 border-purple-200';
+      if (task.subject === '수학학원') subjectBadge = 'bg-rose-100 text-rose-800 border-rose-200';
+      if (isClinic) subjectBadge = 'bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200';
+
+      // Traffic light state
+      const trafficLight = task.understanding; // 'green' | 'yellow' | 'red' | null
+
+      cardsHtml += `
+        <div class="bg-white rounded-2xl border ${isCompleted ? 'border-emerald-200 ring-1 ring-emerald-100 shadow-sm' : 'border-slate-200 shadow-sm'} p-4 sm:p-5 transition-all">
+          <!-- Top Row: Badges & Reschedule Button -->
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border ${subjectBadge}">
+                ${task.subject}
+              </span>
+              ${task.chapter ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">${task.chapter}</span>` : ''}
+              ${task.rescheduledFrom ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-orange-100 text-orange-700 border border-orange-200">일정 이동됨 (${task.rescheduledFrom})</span>` : ''}
+              ${task.completedDate && task.completedDate !== task.plannedDate ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">완료일: ${task.completedDate}</span>` : ''}
+            </div>
+            
+            <div class="flex items-center gap-1">
+              <button onclick="window.openRescheduleModal('${task.id}')" title="일정 이동 / 완료일 수정" class="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors text-xs flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M10 14h4"/><path d="M12 12v4"/></svg>
+                <span class="hidden sm:inline">일정 이동</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Unit Title & Completion Checkbox -->
+          <div class="mt-3 flex items-start gap-3">
+            <button onclick="window.toggleTaskCompletion('${task.id}')" class="mt-0.5 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors flex-shrink-0 ${isCompleted ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 hover:border-purple-400 bg-white'}">
+              ${isCompleted ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+            </button>
+            <div class="flex-1">
+              <h4 class="text-base sm:text-lg font-bold text-slate-800 ${isCompleted ? 'line-through text-slate-400' : ''}">
+                ${task.unit}
+              </h4>
+              <p class="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
+                ${task.summary}
+              </p>
+              ${task.keywords && task.keywords.length > 0 ? `
+                <div class="mt-2 flex flex-wrap gap-1">
+                  ${task.keywords.map(kw => `<span class="text-[11px] text-purple-600 bg-purple-50/80 px-1.5 py-0.5 rounded font-medium">${kw}</span>`).join('')}
+                </div>
+              ` : ''}
+            </div>
+          </div>
+
+          <!-- Academy Specific Field -->
+          ${isAcademy ? `
+            <div class="mt-4 p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-700 flex items-center gap-1">
+                  🏫 학원 진도 & 숙제 기록
+                </span>
+                <label class="flex items-center gap-1.5 text-xs font-semibold cursor-pointer text-slate-700">
+                  <input type="checkbox" onchange="window.toggleHomeworkDone('${task.id}', this.checked)" ${task.homeworkDone ? 'checked' : ''} class="w-4 h-4 rounded text-purple-600 focus:ring-purple-400">
+                  숙제 완료
+                </label>
+              </div>
+              <input type="text" placeholder="오늘 배운 학원 진도 (예: 구문독해 Unit 4, 수열의 합 유형 3개)" value="${task.academyProgress || ''}" onchange="window.updateAcademyProgress('${task.id}', this.value)" class="w-full text-xs sm:text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-purple-400">
+            </div>
+          ` : ''}
+
+          <!-- Metacognitive Section (Daughter's Input) -->
+          <div class="mt-4 pt-3 border-t border-slate-100 space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <span class="text-xs font-bold text-slate-700 flex items-center gap-1">
+                <span>🚦 메타인지 이해도 신호등:</span>
+              </span>
+              <!-- Traffic Light Buttons -->
+              <div class="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 gap-1">
+                <button onclick="window.setTaskUnderstanding('${task.id}', 'green')" class="px-2.5 py-1 rounded-md text-xs font-semibold transition-all flex items-center gap-1 ${trafficLight === 'green' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200/60'}">
+                  <span>🟢</span> 완벽 이해
+                </button>
+                <button onclick="window.setTaskUnderstanding('${task.id}', 'yellow')" class="px-2.5 py-1 rounded-md text-xs font-semibold transition-all flex items-center gap-1 ${trafficLight === 'yellow' ? 'bg-amber-500 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200/60'}">
+                  <span>🟡</span> 문제 더 풀기
+                </button>
+                <button onclick="window.setTaskUnderstanding('${task.id}', 'red')" class="px-2.5 py-1 rounded-md text-xs font-semibold transition-all flex items-center gap-1 ${trafficLight === 'red' ? 'bg-rose-500 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200/60'}">
+                  <span>🔴</span> 개념 헷갈림
+                </button>
+              </div>
+            </div>
+
+            <!-- One-line Reflection Memo -->
+            <div class="relative">
+              <input type="text" placeholder="👧 오늘의 한 줄 인출 메모 (핵심 키워드 요약 또는 헷갈리는 질문)..." value="${task.daughterMemo || ''}" onchange="window.updateDaughterMemo('${task.id}', this.value)" class="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-slate-200 bg-rose-50/20 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-300 placeholder:text-slate-400">
+            </div>
+          </div>
+
+          <!-- Family Cheers & Stamps Section -->
+          <div class="mt-4 pt-3 border-t border-slate-100">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-700 flex items-center gap-1">
+                <span>👨‍👩‍👧 가족 응원 & 칭찬 스탬프</span>
+                <span class="text-[11px] font-normal text-slate-400">(${task.cheers ? task.cheers.length : 0})</span>
+              </span>
+            </div>
+
+            <!-- Existing Cheers List -->
+            <div class="mt-2 space-y-1.5">
+              ${task.cheers && task.cheers.length > 0 ? task.cheers.map(c => `
+                <div class="flex items-start justify-between gap-2 p-2 rounded-xl text-xs ${c.role === 'mom' ? 'bg-amber-50 border border-amber-100 text-amber-900' : 'bg-indigo-50 border border-indigo-100 text-indigo-900'}">
+                  <div class="flex items-center gap-2">
+                    <span class="text-base">${c.stamp || '👏'}</span>
+                    <div>
+                      <span class="font-bold">${c.role === 'mom' ? '👩 엄마' : '👨 아빠'}:</span>
+                      <span class="ml-1">${c.comment}</span>
+                    </div>
+                  </div>
+                  <span class="text-[10px] text-slate-400 flex-shrink-0">${c.time || ''}</span>
+                </div>
+              `).join('') : `
+                <p class="text-xs text-slate-400 italic py-1">아직 등록된 응원이 없습니다. 부모님 역할을 선택하고 칭찬을 남겨보세요!</p>
+              `}
+            </div>
+
+            <!-- Parent Cheering Box (Shown if Role is Mom or Dad) -->
+            ${currentRole === 'mom' || currentRole === 'dad' ? `
+              <div class="mt-3 p-3 bg-purple-50/60 rounded-xl border border-purple-100 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-purple-900">
+                    ${currentRole === 'mom' ? '👩 엄마의 원터치 칭찬 스탬프' : '👨 아빠의 원터치 칭찬 스탬프'}
+                  </span>
+                </div>
+                <div class="flex flex-wrap gap-1.5">
+                  <button onclick="window.quickAddStamp('${task.id}', '👏', '꾸준함 최고!')" class="px-2 py-1 bg-white hover:bg-purple-100 border border-purple-200 rounded-lg text-xs font-medium text-slate-700 transition-colors shadow-2xs">
+                    👏 꾸준함 최고
+                  </button>
+                  <button onclick="window.quickAddStamp('${task.id}', '🔥', '집중력 굿!')" class="px-2 py-1 bg-white hover:bg-purple-100 border border-purple-200 rounded-lg text-xs font-medium text-slate-700 transition-colors shadow-2xs">
+                    🔥 집중력 굿
+                  </button>
+                  <button onclick="window.quickAddStamp('${task.id}', '🍰', '주말 간식 획득!')" class="px-2 py-1 bg-white hover:bg-purple-100 border border-purple-200 rounded-lg text-xs font-medium text-slate-700 transition-colors shadow-2xs">
+                    🍰 주말 간식 획득
+                  </button>
+                  <button onclick="window.quickAddStamp('${task.id}', '⭐', '넌 최고야!')" class="px-2 py-1 bg-white hover:bg-purple-100 border border-purple-200 rounded-lg text-xs font-medium text-slate-700 transition-colors shadow-2xs">
+                    ⭐ 넌 최고야
+                  </button>
+                  <button onclick="window.quickAddStamp('${task.id}', '💯', '성실왕!')" class="px-2 py-1 bg-white hover:bg-purple-100 border border-purple-200 rounded-lg text-xs font-medium text-slate-700 transition-colors shadow-2xs">
+                    💯 성실왕
+                  </button>
+                </div>
+                <!-- Custom Comment Form -->
+                <div class="flex items-center gap-1.5 mt-2">
+                  <input type="text" id="cheer-input-${task.id}" placeholder="직접 격려 코멘트를 남겨보세요..." class="flex-1 text-xs px-3 py-1.5 rounded-lg border border-purple-200 bg-white focus:outline-none focus:ring-2 focus:ring-purple-400">
+                  <button onclick="window.submitCustomCheer('${task.id}')" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-colors shadow-xs">
+                    등록
+                  </button>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = cardsHtml;
+  }
+
+  // --- Task Interaction Functions ---
+  window.toggleTaskCompletion = function(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    if (task.status === 'completed') {
+      task.status = 'planned';
+      task.completedDate = null;
+    } else {
+      task.status = 'completed';
+      task.completedDate = getTodayDateStr();
+      triggerConfetti();
+    }
+    saveAndSyncTasks();
+  };
+
+  window.setTaskUnderstanding = function(taskId, level) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    task.understanding = (task.understanding === level) ? null : level;
+    saveAndSyncTasks();
+  };
+
+  window.updateDaughterMemo = function(taskId, memo) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    task.daughterMemo = memo;
+    saveAndSyncTasks();
+  };
+
+  window.toggleHomeworkDone = function(taskId, isDone) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    task.homeworkDone = isDone;
+    if (isDone && task.status !== 'completed') {
+      task.status = 'completed';
+      task.completedDate = getTodayDateStr();
+    }
+    saveAndSyncTasks();
+  };
+
+  window.updateAcademyProgress = function(taskId, progress) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    task.academyProgress = progress;
+    saveAndSyncTasks();
+  };
+
+  // --- Cheering Functions ---
+  window.quickAddStamp = function(taskId, stamp, text) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    if (!task.cheers) task.cheers = [];
+
+    const now = new Date();
+    const timeStr = `${now.getMonth() + 1}/${now.getDate()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    task.cheers.push({
+      id: 'cheer_' + Date.now(),
+      role: currentRole,
+      stamp: stamp,
+      comment: text,
+      time: timeStr
+    });
+
+    triggerHeartConfetti();
+    saveAndSyncTasks();
+  };
+
+  window.submitCustomCheer = function(taskId) {
+    const input = document.getElementById(`cheer-input-${taskId}`);
+    if (!input || !input.value.trim()) return;
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    if (!task.cheers) task.cheers = [];
+
+    const now = new Date();
+    const timeStr = `${now.getMonth() + 1}/${now.getDate()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    task.cheers.push({
+      id: 'cheer_' + Date.now(),
+      role: currentRole,
+      stamp: '💬',
+      comment: input.value.trim(),
+      time: timeStr
+    });
+
+    input.value = '';
+    triggerHeartConfetti();
+    saveAndSyncTasks();
+  };
+
+  // --- Metacognition Notes Tab ---
+  window.setMetaFilter = function(filter) {
+    metaFilter = filter;
+    renderMetacognitionNotes();
+  };
+
+  function renderMetacognitionNotes() {
+    const container = document.getElementById('metanotes-container');
+    const filterButtons = document.getElementById('metanotes-filter-bar');
+    if (!container) return;
+
+    // Filter bar
+    const stats = calculateStats();
+    const filterOptions = [
+      { id: 'all', label: `전체 (${tasks.filter(t => t.daughterMemo || t.understanding).length})` },
+      { id: 'red', label: `🔴 개념 헷갈림 (${stats.redTotal})`, color: 'text-rose-600' },
+      { id: 'yellow', label: `🟡 문제 더 풀기 (${stats.yellowTotal})`, color: 'text-amber-600' },
+      { id: 'green', label: `🟢 완벽 이해 (${stats.greenTotal})`, color: 'text-emerald-600' },
+      { id: 'academy', label: `🏫 학원 기록 (${tasks.filter(t => t.isAcademy && (t.academyProgress || t.homeworkDone)).length})` }
+    ];
+
+    if (filterButtons) {
+      filterButtons.innerHTML = filterOptions.map(opt => `
+        <button onclick="window.setMetaFilter('${opt.id}')" class="px-3 py-1.5 rounded-full text-xs font-bold transition-all ${metaFilter === opt.id ? 'bg-purple-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+          ${opt.label}
+        </button>
+      `).join('');
+    }
+
+    // Filter tasks
+    let filtered = tasks.filter(t => {
+      if (metaFilter === 'red') return t.understanding === 'red';
+      if (metaFilter === 'yellow') return t.understanding === 'yellow';
+      if (metaFilter === 'green') return t.understanding === 'green';
+      if (metaFilter === 'academy') return t.isAcademy && (t.academyProgress || t.homeworkDone);
+      return t.daughterMemo || t.understanding || (t.isAcademy && t.academyProgress);
+    });
+
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <div class="col-span-full p-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+          <p class="text-slate-500 font-medium">선택한 조건의 메타인지 기록이 없습니다.</p>
+          <p class="text-xs text-slate-400 mt-1">학습 카드에서 이해도 신호등이나 한 줄 메모를 작성해보세요!</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = filtered.map(t => {
+      let lightBadge = '<span class="text-xs text-slate-400 font-medium">신호등 미선택</span>';
+      if (t.understanding === 'green') lightBadge = '<span class="px-2 py-0.5 rounded-md text-xs font-bold bg-emerald-100 text-emerald-800">🟢 완벽 이해</span>';
+      if (t.understanding === 'yellow') lightBadge = '<span class="px-2 py-0.5 rounded-md text-xs font-bold bg-amber-100 text-amber-800">🟡 문제 더 풀기</span>';
+      if (t.understanding === 'red') lightBadge = '<span class="px-2 py-0.5 rounded-md text-xs font-bold bg-rose-100 text-rose-800">🔴 개념 헷갈림</span>';
+
+      return `
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">${t.subject}</span>
+            <span class="text-xs font-medium text-slate-400">${t.plannedDate} (${t.weekday || ''})</span>
+          </div>
+
+          <h4 class="text-base font-bold text-slate-800 leading-snug">${t.unit}</h4>
+          
+          <div class="flex items-center gap-2">
+            ${lightBadge}
+            ${t.status === 'completed' ? '<span class="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">완료됨 ✓</span>' : '<span class="text-xs font-medium text-slate-400">학습 예정</span>'}
+          </div>
+
+          ${t.daughterMemo ? `
+            <div class="p-3 bg-rose-50/40 rounded-xl border border-rose-100 text-xs sm:text-sm text-slate-800">
+              <span class="font-bold text-rose-600 block mb-0.5">👧 딸의 메타인지 메모:</span>
+              ${t.daughterMemo}
+            </div>
+          ` : ''}
+
+          ${t.isAcademy && t.academyProgress ? `
+            <div class="p-3 bg-purple-50/40 rounded-xl border border-purple-100 text-xs sm:text-sm text-slate-800">
+              <span class="font-bold text-purple-600 block mb-0.5">🏫 학원 진도 & 숙제:</span>
+              ${t.academyProgress} ${t.homeworkDone ? '(숙제 완료 ✓)' : ''}
+            </div>
+          ` : ''}
+
+          <!-- Cheers summary -->
+          ${t.cheers && t.cheers.length > 0 ? `
+            <div class="pt-2 border-t border-slate-100 flex flex-wrap gap-1.5 items-center">
+              <span class="text-[11px] font-bold text-slate-400">응원:</span>
+              ${t.cheers.map(c => `
+                <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md ${c.role === 'mom' ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-indigo-50 text-indigo-800 border border-indigo-200'}">
+                  <span>${c.stamp}</span>
+                  <span class="font-bold">${c.role === 'mom' ? '엄마' : '아빠'}:</span>
+                  <span>${c.comment}</span>
+                </span>
+              `).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  // --- Full Roadmap Tab ---
+  window.setRoadmapFilter = function(week) {
+    roadmapWeekFilter = week;
+    renderRoadmapTable();
+  };
+
+  function renderRoadmapTable() {
+    const container = document.getElementById('roadmap-table-body');
+    const filterContainer = document.getElementById('roadmap-week-filters');
+    if (!container) return;
+
+    if (filterContainer) {
+      let filterHtml = `<button onclick="window.setRoadmapFilter('all')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${roadmapWeekFilter === 'all' ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">전체 (1~9주)</button>`;
+      for (let w = 1; w <= 9; w++) {
+        filterHtml += `<button onclick="window.setRoadmapFilter(${w})" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${roadmapWeekFilter === w ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${w}주차${w===9?'(총복습)':''}</button>`;
+      }
+      filterContainer.innerHTML = filterHtml;
+    }
+
+    let filtered = tasks;
+    if (roadmapWeekFilter !== 'all') {
+      filtered = tasks.filter(t => t.week === roadmapWeekFilter);
+    }
+
+    container.innerHTML = filtered.map(t => {
+      const isCompleted = t.status === 'completed';
+      let statusBadge = isCompleted ? '<span class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800">완료 ✓</span>' : '<span class="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-500">예정</span>';
+      
+      let lightIcon = '-';
+      if (t.understanding === 'green') lightIcon = '🟢';
+      if (t.understanding === 'yellow') lightIcon = '🟡';
+      if (t.understanding === 'red') lightIcon = '🔴';
+
+      return `
+        <tr class="hover:bg-slate-50/80 transition-colors border-b border-slate-100 text-xs sm:text-sm">
+          <td class="px-3 py-3 font-semibold text-slate-700 whitespace-nowrap">${t.week ? `${t.week}주차` : '-'}</td>
+          <td class="px-3 py-3 text-slate-600 whitespace-nowrap">${t.plannedDate} (${t.weekday || ''})</td>
+          <td class="px-3 py-3 whitespace-nowrap">
+            <span class="px-2 py-0.5 rounded font-bold text-xs ${t.subject === '통합과학1' ? 'bg-emerald-50 text-emerald-700' : t.subject === '한국사1' ? 'bg-amber-50 text-amber-700' : t.subject === '통합사회1' ? 'bg-sky-50 text-sky-700' : 'bg-purple-50 text-purple-700'}">${t.subject}</span>
+          </td>
+          <td class="px-3 py-3 font-medium text-slate-800 max-w-xs truncate">${t.unit}</td>
+          <td class="px-3 py-3 text-center whitespace-nowrap text-base">${lightIcon}</td>
+          <td class="px-3 py-3 text-center whitespace-nowrap">${statusBadge}</td>
+          <td class="px-3 py-3 text-right whitespace-nowrap">
+            <button onclick="window.selectCalendarDate('${t.plannedDate}'); window.switchTab('calendar');" class="text-xs text-purple-600 hover:text-purple-800 font-semibold underline">
+              상세보기
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // --- Tab Navigation ---
+  window.switchTab = function(tabName) {
+    activeTab = tabName;
+    localStorage.setItem(STORAGE_KEYS.ACTIVE_TAB, tabName);
+
+    const tabs = ['calendar', 'metacognition', 'roadmap'];
+    tabs.forEach(t => {
+      const btn = document.getElementById(`tab-btn-${t}`);
+      const content = document.getElementById(`tab-content-${t}`);
+      if (!btn || !content) return;
+
+      if (t === tabName) {
+        btn.className = 'px-4 py-2 rounded-xl text-sm font-bold bg-purple-600 text-white shadow-xs transition-all flex items-center gap-1.5';
+        content.classList.remove('hidden');
+      } else {
+        btn.className = 'px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all flex items-center gap-1.5';
+        content.classList.add('hidden');
+      }
+    });
+
+    if (tabName === 'calendar') {
+      renderCalendar();
+      renderDailyCards();
+    } else if (tabName === 'metacognition') {
+      renderMetacognitionNotes();
+    } else if (tabName === 'roadmap') {
+      renderRoadmapTable();
+    }
+  };
+
+  // --- Modals Logic ---
+  let editingTaskId = null;
+
+  window.openRescheduleModal = function(taskId) {
+    editingTaskId = taskId;
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const modal = document.getElementById('reschedule-modal');
+    const titleEl = document.getElementById('reschedule-task-title');
+    const plannedDateInput = document.getElementById('reschedule-planned-date');
+    const completedDateInput = document.getElementById('reschedule-completed-date');
+
+    if (titleEl) titleEl.textContent = task.unit;
+    if (plannedDateInput) plannedDateInput.value = task.plannedDate;
+    if (completedDateInput) completedDateInput.value = task.completedDate || '';
+
+    if (modal) modal.classList.remove('hidden');
+  };
+
+  window.closeRescheduleModal = function() {
+    const modal = document.getElementById('reschedule-modal');
+    if (modal) modal.classList.add('hidden');
+    editingTaskId = null;
+  };
+
+  window.rescheduleShortcut = function(type) {
+    if (!editingTaskId) return;
+    const task = tasks.find(t => t.id === editingTaskId);
+    if (!task) return;
+
+    let targetDate = new Date(task.plannedDate);
+    if (type === 'tomorrow') {
+      targetDate.setDate(targetDate.getDate() + 1);
+    } else if (type === 'nextWeek') {
+      targetDate.setDate(targetDate.getDate() + 7);
+    } else if (type === 'week9') {
+      targetDate = new Date(2027, 0, 25); // Jan 25, 2027
+    }
+
+    const y = targetDate.getFullYear();
+    const m = String(targetDate.getMonth() + 1).padStart(2, '0');
+    const d = String(targetDate.getDate()).padStart(2, '0');
+    const newDateStr = `${y}-${m}-${d}`;
+
+    const plannedDateInput = document.getElementById('reschedule-planned-date');
+    if (plannedDateInput) plannedDateInput.value = newDateStr;
+  };
+
+  window.saveRescheduleModal = function() {
+    if (!editingTaskId) return;
+    const task = tasks.find(t => t.id === editingTaskId);
+    if (!task) return;
+
+    const plannedDateInput = document.getElementById('reschedule-planned-date');
+    const completedDateInput = document.getElementById('reschedule-completed-date');
+
+    if (plannedDateInput && plannedDateInput.value) {
+      if (plannedDateInput.value !== task.plannedDate) {
+        task.rescheduledFrom = task.plannedDate;
+        task.plannedDate = plannedDateInput.value;
+      }
+    }
+
+    if (completedDateInput) {
+      task.completedDate = completedDateInput.value || null;
+      if (task.completedDate) {
+        task.status = 'completed';
+      }
+    }
+
+    closeRescheduleModal();
+    saveAndSyncTasks();
+  };
+
+  // --- Add Custom Task Modal ---
+  window.openAddTaskModal = function() {
+    const modal = document.getElementById('add-task-modal');
+    const dateInput = document.getElementById('new-task-date');
+    if (dateInput) dateInput.value = selectedDate;
+    if (modal) modal.classList.remove('hidden');
+  };
+
+  window.closeAddTaskModal = function() {
+    const modal = document.getElementById('add-task-modal');
+    if (modal) modal.classList.add('hidden');
+  };
+
+  window.saveCustomTask = function() {
+    const subjInput = document.getElementById('new-task-subject');
+    const titleInput = document.getElementById('new-task-title');
+    const summaryInput = document.getElementById('new-task-summary');
+    const dateInput = document.getElementById('new-task-date');
+
+    if (!titleInput || !titleInput.value.trim()) {
+      alert('학습 단원 또는 제목을 입력해주세요.');
+      return;
+    }
+
+    const newTask = {
+      id: 'custom_' + Date.now(),
+      day: null,
+      week: null,
+      date: dateInput.value || selectedDate,
+      weekday: ['일','월','화','수','목','금','토'][new Date(dateInput.value || selectedDate).getDay()],
+      subject: subjInput.value,
+      chapter: '추가 학습',
+      unit: titleInput.value.trim(),
+      summary: summaryInput.value.trim() || '추가 보충 학습 및 오답 정리',
+      keywords: ['#추가학습', '#보충'],
+      isClinic: false,
+      isAcademy: false,
+      status: 'planned',
+      plannedDate: dateInput.value || selectedDate,
+      completedDate: null,
+      understanding: null,
+      daughterMemo: '',
+      cheers: []
+    };
+
+    tasks.push(newTask);
+    closeAddTaskModal();
+    saveAndSyncTasks();
+  };
+
+  // --- Settings & Cloud Modal ---
+  window.openSettingsModal = function() {
+    const modal = document.getElementById('settings-modal');
+    const configInput = document.getElementById('settings-firebase-config');
+    const savedConfig = localStorage.getItem(STORAGE_KEYS.FIREBASE_CONFIG);
+    if (configInput && savedConfig) {
+      configInput.value = savedConfig;
+    }
+    if (modal) modal.classList.remove('hidden');
+  };
+
+  window.closeSettingsModal = function() {
+    const modal = document.getElementById('settings-modal');
+    if (modal) modal.classList.add('hidden');
+  };
+
+  window.saveFirebaseConfig = function() {
+    const configInput = document.getElementById('settings-firebase-config');
+    if (!configInput) return;
+    const raw = configInput.value.trim();
+
+    if (!raw) {
+      localStorage.removeItem(STORAGE_KEYS.FIREBASE_CONFIG);
+      db = null;
+      if (unsubscribeSnapshot) unsubscribeSnapshot();
+      updateSyncStatusUI('local');
+      alert('클라우드 설정이 해제되어 로컬 저장 모드로 전환되었습니다.');
+      closeSettingsModal();
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw);
+      localStorage.setItem(STORAGE_KEYS.FIREBASE_CONFIG, JSON.stringify(parsed));
+      initFirebaseIfConfigured();
+      alert('Firebase 설정이 저장되었습니다! 실시간 동기화를 연결합니다.');
+      closeSettingsModal();
+    } catch (e) {
+      alert('유효한 JSON 형식의 Firebase 설정 객체를 입력해주세요.\n오류: ' + e.message);
+    }
+  };
+
+  // --- Backup & Restore ---
+  window.exportBackupJSON = function() {
+    const dataStr = JSON.stringify({
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      tasks: tasks
+    }, null, 2);
+
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const now = new Date();
+    const dateStamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `metalog_backup_${dateStamp}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  window.importBackupJSON = function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        if (parsed && Array.isArray(parsed.tasks)) {
+          if (confirm(`백업 파일에서 ${parsed.tasks.length}개의 일정을 복원하시겠습니까? (기존 데이터는 덮어씌워집니다)`)) {
+            tasks = parsed.tasks;
+            saveAndSyncTasks();
+            alert('성공적으로 복원되었습니다!');
+            closeSettingsModal();
+          }
+        } else {
+          alert('올바른 메타로그 백업 JSON 파일이 아닙니다.');
+        }
+      } catch (err) {
+        alert('파일을 읽는 중 오류가 발생했습니다: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  window.resetToDefaultCurriculum = function() {
+    if (confirm('정말로 기본 커리큘럼으로 초기화하시겠습니까?\n작성된 메타인지 메모와 체크 현황이 모두 초기화됩니다.')) {
+      if (confirm('다시 한번 확인합니다. 복원할 수 없습니다. 계속하시겠습니까?')) {
+        tasks = JSON.parse(JSON.stringify(window.INITIAL_CURRICULUM));
+        saveAndSyncTasks();
+        alert('기본 커리큘럼으로 초기화되었습니다.');
+        closeSettingsModal();
+      }
+    }
+  };
+
+  // --- Markdown Report Generator ---
+  window.copyMarkdownReport = function() {
+    const stats = calculateStats();
+    let md = `# 🎓 예비고1 63일 완주 메타로그 (MetaLog) 학습 리포트\n\n`;
+    md += `> **기간:** 2026.11.30 ~ 2027.01.31 (63일)  \n`;
+    md += `> **기준일:** ${stats.todayStr} (${stats.dDayText})  \n`;
+    md += `> **전체 달성률:** **${stats.totalPercent}%** (${stats.completedRegular}/${stats.totalRegular} 단원 완주)  \n\n`;
+
+    md += `## 📊 과목별 완주 현황\n`;
+    md += `- **🔬 통합과학 1:** ${stats.science.percent}% (${stats.science.completed}/${stats.science.total} 완료) | 🔴 취약 ${stats.science.redCount}개\n`;
+    md += `- **📜 한국사 1:** ${stats.history.percent}% (${stats.history.completed}/${stats.history.total} 완료) | 🔴 취약 ${stats.history.redCount}개\n`;
+    md += `- **🌍 통합사회 1:** ${stats.society.percent}% (${stats.society.completed}/${stats.society.total} 완료) | 🔴 취약 ${stats.society.redCount}개\n`;
+    md += `- **🏫 학원 점검:** 영어 숙제 완수 ${stats.engDone}/${stats.engAcadTotal} | 수학 숙제 완수 ${stats.mathDone}/${stats.mathAcadTotal}\n\n`;
+
+    md += `## 🚦 메타인지 신호등 점검 요약\n`;
+    md += `- 🟢 완벽 이해: **${stats.greenTotal}개**\n`;
+    md += `- 🟡 문제 더 풀기: **${stats.yellowTotal}개**\n`;
+    md += `- 🔴 개념 헷갈림 (우선 복습 대상): **${stats.redTotal}개**\n\n`;
+
+    const redTasks = tasks.filter(t => t.understanding === 'red');
+    if (redTasks.length > 0) {
+      md += `### 🔴 집중 보완이 필요한 취약 단원 목록\n`;
+      redTasks.forEach(t => {
+        md += `- **[${t.subject}]** ${t.unit} (${t.plannedDate})\n`;
+        if (t.daughterMemo) md += `  - 💡 메모: _${t.daughterMemo}_\n`;
+      });
+      md += `\n`;
+    }
+
+    const memoTasks = tasks.filter(t => t.daughterMemo);
+    if (memoTasks.length > 0) {
+      md += `### 👧 최근 딸아이 메타인지 인출 노트\n`;
+      memoTasks.slice(-10).forEach(t => {
+        md += `- **${t.plannedDate} [${t.subject}] ${t.unit}**\n`;
+        md += `  > ${t.daughterMemo}\n`;
+      });
+      md += `\n`;
+    }
+
+    md += `---\n*Generated by MetaLog (메타로그) - 예비고1 63일 메타인지 트래커*`;
+
+    navigator.clipboard.writeText(md).then(() => {
+      alert('📋 전체 학습 리포트가 마크다운 형식으로 클립보드에 복사되었습니다!\n노션이나 카카오톡에 붙여넣어 공유하세요.');
+    }).catch(err => {
+      console.error('Clipboard copy error:', err);
+      alert('클립보드 복사 중 오류가 발생했습니다.');
+    });
+  };
+
+  // --- Simulator / Date Preview ---
+  window.openSimModal = function() {
+    const modal = document.getElementById('sim-modal');
+    if (modal) modal.classList.remove('hidden');
+  };
+
+  window.closeSimModal = function() {
+    const modal = document.getElementById('sim-modal');
+    if (modal) modal.classList.add('hidden');
+  };
+
+  window.setSimulatedDate = function(dateStr) {
+    if (dateStr) {
+      simulatedDate = dateStr;
+      localStorage.setItem(STORAGE_KEYS.SIMULATED_DATE, dateStr);
+      selectedDate = dateStr;
+    } else {
+      simulatedDate = null;
+      localStorage.removeItem(STORAGE_KEYS.SIMULATED_DATE);
+      selectedDate = getTodayDateStr();
+    }
+    const [y, m] = selectedDate.split('-').map(Number);
+    currentCalendarMonth = new Date(y, m - 1, 1);
+    closeSimModal();
+    renderAll();
+  };
+
+  // --- Confetti FX ---
+  function triggerConfetti() {
+    if (typeof confetti === 'function') {
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.7 }
+      });
+    }
+  }
+
+  function triggerHeartConfetti() {
+    if (typeof confetti === 'function') {
+      confetti({
+        particleCount: 30,
+        spread: 45,
+        origin: { y: 0.8 },
+        colors: ['#EC4899', '#F43F5E', '#A855F7', '#FBBF24']
+      });
+    }
+  }
+
+  // --- Service Worker ---
+  function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('MetaLog ServiceWorker registered'))
+          .catch(err => console.log('MetaLog ServiceWorker registration skipped:', err));
+      });
+    }
+  }
+
+  function setupEventListeners() {
+    renderRoleSwitcher();
+  }
+
+  function renderAll() {
+    renderRoleSwitcher();
+    renderHeroBanner();
+    if (activeTab === 'calendar') {
+      renderCalendar();
+      renderDailyCards();
+    } else if (activeTab === 'metacognition') {
+      renderMetacognitionNotes();
+    } else if (activeTab === 'roadmap') {
+      renderRoadmapTable();
+    }
+  }
+
+  // Start app on DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+  } else {
+    initApp();
+  }
+})();

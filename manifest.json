@@ -1,0 +1,34 @@
+{
+  "name": "메타로그 (MetaLog) - 예비고1 63일 메타인지 트래커",
+  "short_name": "메타로그",
+  "description": "예비고1 63일 완자 1학기 3과목 완주 & 메타인지 트래커 (가족 3인 공유 웹앱)",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#FAF5FF",
+  "theme_color": "#7C3AED",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
