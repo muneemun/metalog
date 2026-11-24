@@ -360,9 +360,14 @@
             <p class="text-xs text-slate-400 mt-0.5">클릭한 날짜의 학습 진도 및 메타인지 기록</p>
           </div>
 
-          <button onclick="window.openAddTaskModal()" class="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1 shadow-2xs">
-            <span>+</span> 추가 학습
-          </button>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <button onclick="window.switchTab('roadmap'); document.getElementById('weekly-routine-guide').scrollIntoView({behavior:'smooth'});" class="px-2.5 py-1.5 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 text-purple-700 border border-purple-200/80 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-2xs cursor-pointer">
+              <span>💡</span> 주간 학습 루틴
+            </button>
+            <button onclick="window.openAddTaskModal()" class="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1 shadow-2xs cursor-pointer">
+              <span>+</span> 추가 학습
+            </button>
+          </div>
         </div>
 
         <!-- Cards List Container -->
@@ -422,6 +427,193 @@
     <!-- TAB 3: FULL ROADMAP VIEW -->
     <div id="tab-content-roadmap" class="hidden space-y-6">
       
+      <!-- Weekly Routine & Workload Distribution Guide for Student -->
+      <div id="weekly-routine-guide" class="bg-gradient-to-br from-purple-50 via-indigo-50/70 to-pink-50/50 rounded-3xl p-5 sm:p-6 border border-purple-200 shadow-sm space-y-4">
+        
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-purple-200/70 pb-3.5">
+          <div>
+            <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-black bg-purple-600 text-white mb-1.5 shadow-2xs">
+              ✨ 63일 학습 황금 루틴 가이드
+            </div>
+            <h3 class="text-base sm:text-lg font-black text-slate-800 flex items-center gap-2">
+              <span>💡 학원 가는 날 & 안 가는 날, 학습량은 이렇게 나뉘어 있어요!</span>
+            </h3>
+            <p class="text-xs sm:text-sm text-slate-600 mt-1">
+              학원 숙제와 자습에 지치지 않도록, 요일별 두뇌 피로도와 시간에 맞춘 <strong>황금 밸런스 시간표</strong>예요.
+            </p>
+          </div>
+          <div class="flex items-center gap-2 text-xs font-bold text-purple-800 bg-white/95 px-3.5 py-2 rounded-2xl border border-purple-200 w-fit shadow-2xs flex-shrink-0">
+            <span>🎯 하루 목표:</span>
+            <span class="text-slate-700">무리 없이 딱 1단원 (8~14쪽)</span>
+          </div>
+        </div>
+
+        <!-- 7 Days Grid Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-2.5">
+          
+          <!-- Mon -->
+          <div class="bg-white/95 rounded-2xl p-3 border border-purple-100 shadow-2xs flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between pb-1.5 border-b border-slate-100 text-xs">
+                <span class="font-black text-slate-800">월요일</span>
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">영어 학원</span>
+              </div>
+              <div class="mt-2 space-y-1">
+                <div class="text-xs font-extrabold text-amber-700 flex items-center gap-1">
+                  <span>📜</span> 한국사 1단원
+                </div>
+                <div class="text-[10px] text-slate-400 font-semibold">약 10~12쪽 (40분 소요)</div>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-600 mt-2 leading-relaxed bg-slate-50 p-2 rounded-xl border border-slate-100">
+              영어 숙제 마친 뒤, 이야기 읽듯 부담 없이 역사 스토리텔링!
+            </p>
+          </div>
+
+          <!-- Tue -->
+          <div class="bg-white/95 rounded-2xl p-3 border border-emerald-300 shadow-2xs flex flex-col justify-between ring-2 ring-emerald-200/60">
+            <div>
+              <div class="flex items-center justify-between pb-1.5 border-b border-emerald-100 text-xs">
+                <span class="font-black text-slate-800">화요일</span>
+                <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">학원 없음 🌿</span>
+              </div>
+              <div class="mt-2 space-y-1">
+                <div class="text-xs font-extrabold text-emerald-700 flex items-center gap-1">
+                  <span>🔬</span> 통합과학 집중
+                </div>
+                <div class="text-[10px] text-slate-400 font-semibold">약 12~14쪽 (1.5시간)</div>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-700 mt-2 leading-relaxed bg-emerald-50/60 p-2 rounded-xl border border-emerald-100 font-medium">
+              학원 없는 골든 데이! 과학의 원리와 개념을 깊이 있게 정복!
+            </p>
+          </div>
+
+          <!-- Wed -->
+          <div class="bg-white/95 rounded-2xl p-3 border border-purple-100 shadow-2xs flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between pb-1.5 border-b border-slate-100 text-xs">
+                <span class="font-black text-slate-800">수요일</span>
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">영어 학원</span>
+              </div>
+              <div class="mt-2 space-y-1">
+                <div class="text-xs font-extrabold text-amber-700 flex items-center gap-1">
+                  <span>📜</span> 한국사 1단원
+                </div>
+                <div class="text-[10px] text-slate-400 font-semibold">약 10~12쪽 (40분 소요)</div>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-600 mt-2 leading-relaxed bg-slate-50 p-2 rounded-xl border border-slate-100">
+              영어 단어 외우고 한국사 시대별 흐름 잡기
+            </p>
+          </div>
+
+          <!-- Thu -->
+          <div class="bg-white/95 rounded-2xl p-3 border border-sky-100 shadow-2xs flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between pb-1.5 border-b border-slate-100 text-xs">
+                <span class="font-black text-slate-800">목요일</span>
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-700">수학 학원</span>
+              </div>
+              <div class="mt-2 space-y-1">
+                <div class="text-xs font-extrabold text-sky-700 flex items-center gap-1">
+                  <span>🌍</span> 통합사회 1단원
+                </div>
+                <div class="text-[10px] text-slate-400 font-semibold">약 8~10쪽 (30분 소요)</div>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-600 mt-2 leading-relaxed bg-sky-50/50 p-2 rounded-xl border border-sky-100">
+              수학 풀고 지친 머리, 상식과 사회 개념으로 가볍게 힐링!
+            </p>
+          </div>
+
+          <!-- Fri -->
+          <div class="bg-white/95 rounded-2xl p-3 border border-emerald-300 shadow-2xs flex flex-col justify-between ring-2 ring-emerald-200/60">
+            <div>
+              <div class="flex items-center justify-between pb-1.5 border-b border-emerald-100 text-xs">
+                <span class="font-black text-slate-800">금요일</span>
+                <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">학원 없음 🌿</span>
+              </div>
+              <div class="mt-2 space-y-1">
+                <div class="text-xs font-extrabold text-emerald-700 flex items-center gap-1">
+                  <span>🔬</span> 통합과학 집중
+                </div>
+                <div class="text-[10px] text-slate-400 font-semibold">약 12~14쪽 (1.5시간)</div>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-700 mt-2 leading-relaxed bg-emerald-50/60 p-2 rounded-xl border border-emerald-100 font-medium">
+              주말 전 학원 없는 날! 과학 고난도 유형 여유 있게 정복!
+            </p>
+          </div>
+
+          <!-- Sat -->
+          <div class="bg-white/95 rounded-2xl p-3 border border-slate-200 shadow-2xs flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between pb-1.5 border-b border-slate-100 text-xs">
+                <span class="font-black text-blue-600">토요일</span>
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-700">수학 학원</span>
+              </div>
+              <div class="mt-2 space-y-1">
+                <div class="text-xs font-extrabold text-emerald-700 flex items-center gap-1">
+                  <span>🔬</span> 통합과학 1단원
+                </div>
+                <div class="text-[10px] text-slate-400 font-semibold">약 12~14쪽 (1시간)</div>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-600 mt-2 leading-relaxed bg-slate-50 p-2 rounded-xl border border-slate-100">
+              주말 낮 여유 시간에 과학 개념 끝내고 홀가분하게 학원 가기
+            </p>
+          </div>
+
+          <!-- Sun -->
+          <div class="bg-white/95 rounded-2xl p-3 border border-slate-200 shadow-2xs flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between pb-1.5 border-b border-slate-100 text-xs">
+                <span class="font-black text-rose-600">일요일</span>
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-700">수학 학원</span>
+              </div>
+              <div class="mt-2 space-y-1">
+                <div class="text-xs font-extrabold text-sky-700 flex items-center gap-1">
+                  <span>🌍</span> 통합사회 1단원
+                </div>
+                <div class="text-[10px] text-slate-400 font-semibold">약 8~10쪽 (30분 소요)</div>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-600 mt-2 leading-relaxed bg-slate-50 p-2 rounded-xl border border-slate-100">
+              한 주의 마무리! 사회 가볍게 복습하고 한 주 완주 뿌듯하게 달성!
+            </p>
+          </div>
+
+        </div>
+
+        <!-- 3 Golden Rules Bar -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 text-xs">
+          <div class="p-3.5 bg-white/95 rounded-2xl border border-purple-100/90 flex items-start gap-3 shadow-2xs">
+            <span class="text-lg flex-shrink-0">1️⃣</span>
+            <div>
+              <span class="font-extrabold text-slate-800 text-xs sm:text-sm block">하루 딱 1과목 1단원만!</span>
+              <span class="text-slate-500 text-[11px] leading-relaxed mt-0.5 block">무리해서 몰아하지 않고 매일 8~14쪽만 완벽히 인출하고 넘어가요.</span>
+            </div>
+          </div>
+          <div class="p-3.5 bg-white/95 rounded-2xl border border-purple-100/90 flex items-start gap-3 shadow-2xs">
+            <span class="text-lg flex-shrink-0">2️⃣</span>
+            <div>
+              <span class="font-extrabold text-slate-800 text-xs sm:text-sm block">두뇌 피로도 찰떡 밸런스</span>
+              <span class="text-slate-500 text-[11px] leading-relaxed mt-0.5 block">수학 학원 날엔 사회, 영어 학원 날엔 역사로 뇌 피로도를 식혀줘요.</span>
+            </div>
+          </div>
+          <div class="p-3.5 bg-white/95 rounded-2xl border border-purple-100/90 flex items-start gap-3 shadow-2xs">
+            <span class="text-lg flex-shrink-0">3️⃣</span>
+            <div>
+              <span class="font-extrabold text-slate-800 text-xs sm:text-sm block">화·금은 진짜 실력 크는 날!</span>
+              <span class="text-slate-500 text-[11px] leading-relaxed mt-0.5 block">학원 없는 날, 가장 중요한 통합과학 핵심 개념을 여유롭게 정복해요.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
       <!-- Roadmap Filters Container -->
       <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -748,7 +940,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="data.js?v=1.1.7"></script>
-  <script src="app.js?v=1.1.7"></script>
+  <script src="data.js?v=1.1.8"></script>
+  <script src="app.js?v=1.1.8"></script>
 </body>
 </html>
