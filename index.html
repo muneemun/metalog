@@ -116,22 +116,15 @@
         </button>
       </div>
 
-      <!-- Role Switcher -->
-      <div class="bg-slate-100/80 p-0.5 sm:p-1 rounded-full flex items-center border border-slate-200">
-        <button id="role-btn-daughter" onclick="window.setRole('daughter')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all flex items-center gap-1">
-          <span>👧</span>
-          <span class="hidden sm:inline">딸 (학습자)</span>
-          <span class="sm:hidden">딸</span>
+      <!-- Mode Switcher (학습 모드 / 체크 모드) -->
+      <div class="bg-slate-100/90 p-0.5 sm:p-1 rounded-full flex items-center border border-slate-200">
+        <button id="mode-btn-study" onclick="window.setMode('study')" class="px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold bg-purple-600 text-white shadow-xs flex items-center gap-1.5 transition-all">
+          <span>📖</span>
+          <span>학습 모드</span>
         </button>
-        <button id="role-btn-mom" onclick="window.setRole('mom')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center gap-1">
-          <span>👩</span>
-          <span class="hidden sm:inline">엄마</span>
-          <span class="sm:hidden">엄마</span>
-        </button>
-        <button id="role-btn-dad" onclick="window.setRole('dad')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center gap-1">
-          <span>👨</span>
-          <span class="hidden sm:inline">아빠</span>
-          <span class="sm:hidden">아빠</span>
+        <button id="mode-btn-check" onclick="window.setMode('check')" class="px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all flex items-center gap-1.5">
+          <span>🔍</span>
+          <span>체크 모드</span>
         </button>
       </div>
 
@@ -164,7 +157,7 @@
             </span>
           </div>
           <h2 id="hero-greeting" class="text-base sm:text-xl font-bold text-slate-800 leading-snug">
-            오늘도 한 걸음 더! <span class="text-rose-600 font-bold">딸(학습자)</span>의 메타인지로 63일 완주를 향해 달려가요 🌸
+            오늘의 목표를 향해 나만의 페이스로 완주해요 ✨ <span class="text-purple-600 font-bold">[학습 모드]</span>
           </h2>
         </div>
 
@@ -352,10 +345,10 @@
       <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h3 class="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
-            <span>🚦 메타인지 오답 & 질문 인출 보관함</span>
+            <span>🚦 메타인지 오답 & 핵심 개념 인출 노트</span>
           </h3>
           <p class="text-xs sm:text-sm text-slate-500 mt-1">
-            이해도 신호등(🟢/🟡/🔴)별로 정리된 단원과 딸아이의 한 줄 메타인지 메모를 한눈에 검토하세요.
+            이해도 신호등(🟢/🟡/🔴)별로 정리된 단원과 직접 작성한 한 줄 메타인지 메모를 한눈에 검토하세요.
           </p>
         </div>
 
@@ -531,11 +524,11 @@
       <div class="p-4 bg-purple-50/70 rounded-2xl border border-purple-100 space-y-3">
         <div class="flex items-center justify-between">
           <span class="text-sm font-bold text-purple-900 flex items-center gap-1.5">
-            <span>☁️</span> Firebase 실시간 동기화 (3인 가족 공유)
+            <span>☁️</span> Firebase 실시간 동기화 (기기간 공유)
           </span>
         </div>
         <p class="text-xs text-slate-600 leading-relaxed">
-          Firebase Firestore의 <code>firebaseConfig</code> 객체 JSON을 아래에 붙여넣으면 딸, 엄마, 아빠의 모든 기기에서 실시간 동기화됩니다. 비워두면 기기별 독립 로컬 모드로 작동합니다.
+          Firebase Firestore의 <code>firebaseConfig</code> 객체 JSON을 아래에 붙여넣으면 스마트폰, 태블릿, PC 등 여러 기기 간 실시간 동기화됩니다. 비워두면 기기별 독립 로컬 모드로 작동합니다.
         </p>
         <textarea id="settings-firebase-config" rows="5" placeholder='{"apiKey": "AIzaSy...", "authDomain": "...", "projectId": "...", "storageBucket": "...", "messagingSenderId": "...", "appId": "..."}' class="w-full font-mono text-xs p-3 rounded-xl border border-purple-200 bg-white focus:outline-none focus:ring-2 focus:ring-purple-400"></textarea>
         <button onclick="window.saveFirebaseConfig()" class="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition-colors shadow-2xs">

@@ -1,13 +1,14 @@
 /**
  * MetaLog (메타로그) - Core Application Logic
- * Supports: LocalStorage, Firebase Firestore real-time sync, PWA, Multi-role (딸, 엄마, 아빠)
+ * Supports: LocalStorage, Firebase Firestore real-time sync, PWA, Modes (학습 모드, 체크 모드)
  */
 
 (() => {
   // --- Constants & Storage Keys ---
   const STORAGE_KEYS = {
     TASKS: 'metalog_tasks_v1',
-    ROLE: 'metalog_current_role',
+    MODE: 'metalog_current_mode',
+    SUPPORTER: 'metalog_current_supporter',
     FIREBASE_CONFIG: 'metalog_firebase_config',
     SIMULATED_DATE: 'metalog_simulated_date',
     ACTIVE_TAB: 'metalog_active_tab',
@@ -19,7 +20,8 @@
 
   // --- State ---
   let tasks = [];
-  let currentRole = localStorage.getItem(STORAGE_KEYS.ROLE) || 'daughter'; // 'daughter' | 'mom' | 'dad'
+  let currentMode = localStorage.getItem(STORAGE_KEYS.MODE) || 'study'; // 'study' | 'check'
+  let currentSupporter = localStorage.getItem(STORAGE_KEYS.SUPPORTER) || '서포터 1'; // '서포터 1' | '서포터 2'
   let activeTab = localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB) || 'calendar'; // 'calendar' | 'metacognition' | 'roadmap'
   let metaFilter = 'all'; // 'all' | 'red' | 'yellow' | 'green' | 'academy'
   let roadmapWeekFilter = 'all'; // 'all' | 1..9
@@ -169,7 +171,7 @@
     db.collection('metalog_family').doc('shared_curriculum').set({
       tasks: tasks,
       lastUpdated: new Date().toISOString(),
-      updatedBy: currentRole
+      updatedBy: currentMode === 'study' ? '학습자' : currentSupporter
     }, { merge: true })
     .then(() => {
       updateSyncStatusUI('synced');
@@ -207,32 +209,34 @@
     }
   }
 
-  // --- Role Switcher ---
-  window.setRole = function(role) {
-    currentRole = role;
-    localStorage.setItem(STORAGE_KEYS.ROLE, role);
-    renderRoleSwitcher();
+  // --- Mode Switcher (학습 모드 / 체크 모드) ---
+  window.setMode = function(mode) {
+    currentMode = mode;
+    localStorage.setItem(STORAGE_KEYS.MODE, mode);
+    renderModeSwitcher();
     renderHeroBanner();
     renderDailyCards();
   };
 
-  function renderRoleSwitcher() {
-    const roles = ['daughter', 'mom', 'dad'];
-    roles.forEach(r => {
-      const btn = document.getElementById(`role-btn-${r}`);
-      if (!btn) return;
-      if (r === currentRole) {
-        if (r === 'daughter') {
-          btn.className = 'px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold bg-rose-500 text-white shadow-sm ring-2 ring-rose-200 flex items-center gap-1.5';
-        } else if (r === 'mom') {
-          btn.className = 'px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold bg-amber-500 text-white shadow-sm ring-2 ring-amber-200 flex items-center gap-1.5';
-        } else {
-          btn.className = 'px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-200 flex items-center gap-1.5';
-        }
+  window.setSupporter = function(supporterName) {
+    currentSupporter = supporterName;
+    localStorage.setItem(STORAGE_KEYS.SUPPORTER, supporterName);
+    renderDailyCards();
+  };
+
+  function renderModeSwitcher() {
+    const studyBtn = document.getElementById('mode-btn-study');
+    const checkBtn = document.getElementById('mode-btn-check');
+
+    if (studyBtn && checkBtn) {
+      if (currentMode === 'study') {
+        studyBtn.className = 'px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-purple-600 text-white shadow-xs flex items-center gap-1.5 transition-all';
+        checkBtn.className = 'px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all flex items-center gap-1.5';
       } else {
-        btn.className = 'px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors flex items-center gap-1.5';
+        checkBtn.className = 'px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-indigo-600 text-white shadow-xs flex items-center gap-1.5 transition-all';
+        studyBtn.className = 'px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all flex items-center gap-1.5';
       }
-    });
+    }
   }
 
   // --- Hero & Progress Calculations ---
@@ -300,12 +304,10 @@
     // Greeting
     const greetingEl = document.getElementById('hero-greeting');
     if (greetingEl) {
-      if (currentRole === 'daughter') {
-        greetingEl.innerHTML = `오늘도 한 걸음 더! <span class="text-rose-600 font-bold">딸(학습자)</span>의 메타인지로 63일 완주를 향해 달려가요 🌸`;
-      } else if (currentRole === 'mom') {
-        greetingEl.innerHTML = `오늘 딸아이의 멋진 도전을 응원해 주세요! <span class="text-amber-600 font-bold">엄마</span>의 사랑 가득 칭찬 스탬프를 꾹 눌러주세요 💖`;
+      if (currentMode === 'study') {
+        greetingEl.innerHTML = `오늘의 목표를 향해 나만의 페이스로 완주해요 ✨ <span class="text-purple-600 font-bold">[학습 모드]</span>`;
       } else {
-        greetingEl.innerHTML = `꾸준함이 최고의 실력! 든든한 서포터 <span class="text-indigo-600 font-bold">아빠</span>가 언제나 함께해요 👨‍👧`;
+        greetingEl.innerHTML = `학습 현황을 확인하고 따뜻한 격려와 응원을 남겨보세요 💖 <span class="text-indigo-600 font-bold">[체크 모드]</span>`;
       }
     }
 
@@ -631,67 +633,80 @@
 
             <!-- One-line Reflection Memo -->
             <div class="relative">
-              <input type="text" placeholder="👧 오늘의 한 줄 인출 메모 (핵심 키워드 요약 또는 헷갈리는 질문)..." value="${task.daughterMemo || ''}" onchange="window.updateDaughterMemo('${task.id}', this.value)" class="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-slate-200 bg-rose-50/20 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-300 placeholder:text-slate-400">
+              <input type="text" placeholder="💡 오늘의 한 줄 인출 메모 (핵심 키워드 요약 또는 질문)..." value="${task.daughterMemo || ''}" onchange="window.updateDaughterMemo('${task.id}', this.value)" class="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-slate-200 bg-purple-50/20 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-300 placeholder:text-slate-400">
             </div>
           </div>
 
-          <!-- Family Cheers & Stamps Section -->
+          <!-- Cheers & Stamps Section -->
           <div class="mt-4 pt-3 border-t border-slate-100">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold text-slate-700 flex items-center gap-1">
-                <span>👨‍👩‍👧 가족 응원 & 칭찬 스탬프</span>
+                <span>💬 함께하는 응원 & 피드백</span>
                 <span class="text-[11px] font-normal text-slate-400">(${task.cheers ? task.cheers.length : 0})</span>
               </span>
             </div>
 
             <!-- Existing Cheers List -->
             <div class="mt-2 space-y-1.5">
-              ${task.cheers && task.cheers.length > 0 ? task.cheers.map(c => `
-                <div class="flex items-start justify-between gap-2 p-2 rounded-xl text-xs ${c.role === 'mom' ? 'bg-amber-50 border border-amber-100 text-amber-900' : 'bg-indigo-50 border border-indigo-100 text-indigo-900'}">
+              ${task.cheers && task.cheers.length > 0 ? task.cheers.map(c => {
+                const supporterLabel = c.supporter || (c.role === 'mom' ? '서포터 1' : c.role === 'dad' ? '서포터 2' : '서포터');
+                return `
+                <div class="flex items-start justify-between gap-2 p-2 rounded-xl text-xs bg-indigo-50/70 border border-indigo-100 text-indigo-900">
                   <div class="flex items-center gap-2">
                     <span class="text-base">${c.stamp || '👏'}</span>
                     <div>
-                      <span class="font-bold">${c.role === 'mom' ? '👩 엄마' : '👨 아빠'}:</span>
+                      <span class="font-bold">${supporterLabel}:</span>
                       <span class="ml-1">${c.comment}</span>
                     </div>
                   </div>
                   <span class="text-[10px] text-slate-400 flex-shrink-0">${c.time || ''}</span>
                 </div>
-              `).join('') : `
-                <p class="text-xs text-slate-400 italic py-1">아직 등록된 응원이 없습니다. 부모님 역할을 선택하고 칭찬을 남겨보세요!</p>
+              `;}).join('') : `
+                <p class="text-xs text-slate-400 italic py-1">아직 등록된 응원이 없습니다. 상단에서 [체크 모드]로 전환하고 격려 한마디를 남겨보세요!</p>
               `}
             </div>
 
-            <!-- Parent Cheering Box (Shown if Role is Mom or Dad) -->
-            ${currentRole === 'mom' || currentRole === 'dad' ? `
-              <div class="mt-3 p-3 bg-purple-50/60 rounded-xl border border-purple-100 space-y-2">
+            <!-- Cheering Box (Shown in Check Mode) -->
+            ${currentMode === 'check' ? `
+              <div class="mt-3 p-3 bg-purple-50/70 rounded-xl border border-purple-100 space-y-2.5">
                 <div class="flex items-center justify-between">
                   <span class="text-xs font-bold text-purple-900">
-                    ${currentRole === 'mom' ? '👩 엄마의 원터치 칭찬 스탬프' : '👨 아빠의 원터치 칭찬 스탬프'}
+                    ✨ 오늘의 격려 스탬프 남기기
                   </span>
+                  <!-- Supporter Switcher -->
+                  <div class="flex items-center gap-1 bg-white/90 p-0.5 rounded-lg border border-purple-200 text-[11px]">
+                    <button onclick="window.setSupporter('서포터 1')" class="px-2 py-0.5 rounded-md font-bold transition-all ${currentSupporter === '서포터 1' ? 'bg-purple-600 text-white' : 'text-slate-600 hover:bg-slate-100'}">서포터 1</button>
+                    <button onclick="window.setSupporter('서포터 2')" class="px-2 py-0.5 rounded-md font-bold transition-all ${currentSupporter === '서포터 2' ? 'bg-purple-600 text-white' : 'text-slate-600 hover:bg-slate-100'}">서포터 2</button>
+                  </div>
                 </div>
                 <div class="flex flex-wrap gap-1.5">
                   <button onclick="window.quickAddStamp('${task.id}', '👏', '꾸준함 최고!')" class="px-2 py-1 bg-white hover:bg-purple-100 border border-purple-200 rounded-lg text-xs font-medium text-slate-700 transition-colors shadow-2xs">
-                    👏 꾸준함 최고
+                    👏 꾸준함 최고!
                   </button>
                   <button onclick="window.quickAddStamp('${task.id}', '🔥', '집중력 굿!')" class="px-2 py-1 bg-white hover:bg-purple-100 border border-purple-200 rounded-lg text-xs font-medium text-slate-700 transition-colors shadow-2xs">
-                    🔥 집중력 굿
+                    🔥 집중력 굿!
                   </button>
-                  <button onclick="window.quickAddStamp('${task.id}', '🍰', '주말 간식 획득!')" class="px-2 py-1 bg-white hover:bg-purple-100 border border-purple-200 rounded-lg text-xs font-medium text-slate-700 transition-colors shadow-2xs">
-                    🍰 주말 간식 획득
+                  <button onclick="window.quickAddStamp('${task.id}', '🍰', '주말 힐링 선물!')" class="px-2 py-1 bg-white hover:bg-purple-100 border border-purple-200 rounded-lg text-xs font-medium text-slate-700 transition-colors shadow-2xs">
+                    🍰 주말 힐링 선물
                   </button>
-                  <button onclick="window.quickAddStamp('${task.id}', '⭐', '넌 최고야!')" class="px-2 py-1 bg-white hover:bg-purple-100 border border-purple-200 rounded-lg text-xs font-medium text-slate-700 transition-colors shadow-2xs">
-                    ⭐ 넌 최고야
+                  <button onclick="window.quickAddStamp('${task.id}', '⭐', '멋진 노력!')" class="px-2 py-1 bg-white hover:bg-purple-100 border border-purple-200 rounded-lg text-xs font-medium text-slate-700 transition-colors shadow-2xs">
+                    ⭐ 멋진 노력!
                   </button>
                   <button onclick="window.quickAddStamp('${task.id}', '💯', '성실왕!')" class="px-2 py-1 bg-white hover:bg-purple-100 border border-purple-200 rounded-lg text-xs font-medium text-slate-700 transition-colors shadow-2xs">
-                    💯 성실왕
+                    💯 성실왕!
+                  </button>
+                  <button onclick="window.quickAddStamp('${task.id}', '☕', '푹 쉬렴')" class="px-2 py-1 bg-white hover:bg-purple-100 border border-purple-200 rounded-lg text-xs font-medium text-slate-700 transition-colors shadow-2xs">
+                    ☕ 푹 쉬렴
+                  </button>
+                  <button onclick="window.quickAddStamp('${task.id}', '💖', '언제나 응원해')" class="px-2 py-1 bg-white hover:bg-purple-100 border border-purple-200 rounded-lg text-xs font-medium text-slate-700 transition-colors shadow-2xs">
+                    💖 언제나 응원해
                   </button>
                 </div>
                 <!-- Custom Comment Form -->
                 <div class="flex items-center gap-1.5 mt-2">
-                  <input type="text" id="cheer-input-${task.id}" placeholder="직접 격려 코멘트를 남겨보세요..." class="flex-1 text-xs px-3 py-1.5 rounded-lg border border-purple-200 bg-white focus:outline-none focus:ring-2 focus:ring-purple-400">
+                  <input type="text" id="cheer-input-${task.id}" placeholder="따뜻한 격려 한마디를 남겨보세요..." class="flex-1 text-xs px-3 py-1.5 rounded-lg border border-purple-200 bg-white focus:outline-none focus:ring-2 focus:ring-purple-400">
                   <button onclick="window.submitCustomCheer('${task.id}')" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-colors shadow-xs">
-                    등록
+                    응원 등록
                   </button>
                 </div>
               </div>
@@ -763,7 +778,7 @@
 
     task.cheers.push({
       id: 'cheer_' + Date.now(),
-      role: currentRole,
+      supporter: currentSupporter,
       stamp: stamp,
       comment: text,
       time: timeStr
@@ -785,7 +800,7 @@
 
     task.cheers.push({
       id: 'cheer_' + Date.now(),
-      role: currentRole,
+      supporter: currentSupporter,
       stamp: '💬',
       comment: input.value.trim(),
       time: timeStr
@@ -865,15 +880,15 @@
           </div>
 
           ${t.daughterMemo ? `
-            <div class="p-3 bg-rose-50/40 rounded-xl border border-rose-100 text-xs sm:text-sm text-slate-800">
-              <span class="font-bold text-rose-600 block mb-0.5">👧 딸의 메타인지 메모:</span>
+            <div class="p-3 bg-purple-50/40 rounded-xl border border-purple-100 text-xs sm:text-sm text-slate-800">
+              <span class="font-bold text-purple-700 block mb-0.5">💡 한 줄 메타인지 메모:</span>
               ${t.daughterMemo}
             </div>
           ` : ''}
 
           ${t.isAcademy && t.academyProgress ? `
-            <div class="p-3 bg-purple-50/40 rounded-xl border border-purple-100 text-xs sm:text-sm text-slate-800">
-              <span class="font-bold text-purple-600 block mb-0.5">🏫 학원 진도 & 숙제:</span>
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-800">
+              <span class="font-bold text-slate-700 block mb-0.5">🏫 학원 진도 & 숙제:</span>
               ${t.academyProgress} ${t.homeworkDone ? '(숙제 완료 ✓)' : ''}
             </div>
           ` : ''}
@@ -882,13 +897,15 @@
           ${t.cheers && t.cheers.length > 0 ? `
             <div class="pt-2 border-t border-slate-100 flex flex-wrap gap-1.5 items-center">
               <span class="text-[11px] font-bold text-slate-400">응원:</span>
-              ${t.cheers.map(c => `
-                <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md ${c.role === 'mom' ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-indigo-50 text-indigo-800 border border-indigo-200'}">
+              ${t.cheers.map(c => {
+                const label = c.supporter || (c.role === 'mom' ? '서포터 1' : c.role === 'dad' ? '서포터 2' : '서포터');
+                return `
+                <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-800 border border-indigo-200">
                   <span>${c.stamp}</span>
-                  <span class="font-bold">${c.role === 'mom' ? '엄마' : '아빠'}:</span>
+                  <span class="font-bold">${label}:</span>
                   <span>${c.comment}</span>
                 </span>
-              `).join('')}
+              `;}).join('')}
             </div>
           ` : ''}
         </div>
@@ -1233,7 +1250,7 @@
 
     const memoTasks = tasks.filter(t => t.daughterMemo);
     if (memoTasks.length > 0) {
-      md += `### 👧 최근 딸아이 메타인지 인출 노트\n`;
+      md += `### 💡 최근 한 줄 메타인지 인출 노트\n`;
       memoTasks.slice(-10).forEach(t => {
         md += `- **${t.plannedDate} [${t.subject}] ${t.unit}**\n`;
         md += `  > ${t.daughterMemo}\n`;
@@ -1312,11 +1329,11 @@
   }
 
   function setupEventListeners() {
-    renderRoleSwitcher();
+    renderModeSwitcher();
   }
 
   function renderAll() {
-    renderRoleSwitcher();
+    renderModeSwitcher();
     renderHeroBanner();
     if (activeTab === 'calendar') {
       renderCalendar();
