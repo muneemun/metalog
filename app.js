@@ -210,6 +210,13 @@
 
     if (!badge || !statusText || !dot) return;
 
+    if (!navigator.onLine || status === 'offline') {
+      badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300 shadow-sm cursor-pointer hover:bg-amber-100 transition-colors';
+      dot.className = 'w-2 h-2 rounded-full bg-amber-500';
+      statusText.textContent = '⚡ 오프라인 모드 (로컬 안전 저장)';
+      return;
+    }
+
     if (status === 'synced') {
       badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm cursor-pointer hover:bg-emerald-100 transition-colors';
       dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
@@ -229,6 +236,19 @@
       statusText.textContent = '로컬 저장 모드';
     }
   }
+
+  // Network Online / Offline Detection
+  window.addEventListener('online', () => {
+    if (db && !isCloudSyncing) {
+      pushToCloud();
+    } else {
+      updateSyncStatusUI('local');
+    }
+  });
+
+  window.addEventListener('offline', () => {
+    updateSyncStatusUI('offline');
+  });
 
   // --- Motivational Study Wisdom Quotes for 예비고1 ---
   const STUDY_QUOTES = [

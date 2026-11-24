@@ -1,10 +1,11 @@
 // Service Worker for MetaLog (메타로그) PWA
-const CACHE_NAME = 'metalog-v1.1.6';
+const CACHE_NAME = 'metalog-v1.1.7';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './data.js?v=1.1.6',
-  './app.js?v=1.1.6',
+  './data.js?v=1.1.7',
+  './app.js?v=1.1.7',
+  './tailwind.min.js',
   './manifest.json',
   './favicon.svg',
   './icon-192.png',
