@@ -1,10 +1,10 @@
 // Service Worker for MetaLog (메타로그) PWA
-const CACHE_NAME = 'metalog-v1.0.0';
+const CACHE_NAME = 'metalog-v1.1.2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './data.js',
-  './app.js',
+  './data.js?v=1.1.2',
+  './app.js?v=1.1.2',
   './manifest.json',
   './favicon.svg',
   './icon-192.png',
@@ -29,6 +29,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log('Deleting old cache:', key);
             return caches.delete(key);
           }
         })
@@ -39,9 +40,9 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Network first, falling back to cache
   if (event.request.method !== 'GET') return;
   
+  // Always fetch fresh network first for HTML and JS
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {

@@ -209,6 +209,24 @@
     }
   }
 
+  // --- Motivational Study Wisdom Quotes for 예비고1 ---
+  const STUDY_QUOTES = [
+    "🌱 완벽한 이해보다 중요한 것은 매일의 작은 꾸준함이에요.",
+    "💡 개념을 남에게 설명하듯 백지에 적어볼 때 진짜 내 지식이 됩니다.",
+    "✨ 틀린 문제는 내 약점을 보완할 가장 값진 보물이에요.",
+    "🚀 고등학교 첫 학기, 지금 쌓아가는 기초가 가장 든든한 날개가 될 거예요.",
+    "🎯 헷갈리는 부분(🔴)을 솔직하게 마주하는 것이 메타인지의 가장 멋진 시작입니다.",
+    "🌈 조급해하지 말고 나만의 페이스대로 한 단원씩 정복해 나가요.",
+    "💪 질문이 생겼다는 건 그만큼 깊이 고민하고 성장했다는 증거예요.",
+    "🍀 오늘의 1시간 집중이 63일 뒤 놀라운 자신감으로 돌아올 거예요."
+  ];
+
+  function getDailyQuote() {
+    const today = getTodayDateStr();
+    const diff = Math.abs(getDayDiff(DEFAULT_START_DATE, today));
+    return STUDY_QUOTES[diff % STUDY_QUOTES.length];
+  }
+
   // --- Mode Switcher (학습 모드 / 체크 모드) ---
   window.setMode = function(mode) {
     currentMode = mode;
@@ -217,6 +235,7 @@
     renderHeroBanner();
     renderDailyCards();
   };
+  window.setRole = window.setMode; // Backward compatibility alias
 
   window.setSupporter = function(supporterName) {
     currentSupporter = supporterName;
@@ -230,11 +249,11 @@
 
     if (studyBtn && checkBtn) {
       if (currentMode === 'study') {
-        studyBtn.className = 'px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-purple-600 text-white shadow-xs flex items-center gap-1.5 transition-all';
-        checkBtn.className = 'px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all flex items-center gap-1.5';
+        studyBtn.className = 'px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-extrabold bg-purple-600 text-white shadow-xs ring-2 ring-purple-300 flex items-center gap-1.5 transition-all cursor-pointer';
+        checkBtn.className = 'px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all flex items-center gap-1.5 cursor-pointer';
       } else {
-        checkBtn.className = 'px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-indigo-600 text-white shadow-xs flex items-center gap-1.5 transition-all';
-        studyBtn.className = 'px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all flex items-center gap-1.5';
+        checkBtn.className = 'px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-extrabold bg-indigo-600 text-white shadow-xs ring-2 ring-indigo-300 flex items-center gap-1.5 transition-all cursor-pointer';
+        studyBtn.className = 'px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all flex items-center gap-1.5 cursor-pointer';
       }
     }
   }
@@ -301,14 +320,23 @@
   function renderHeroBanner() {
     const stats = calculateStats();
     
-    // Greeting
+    // Greeting & Daily Motivational Study Wisdom
     const greetingEl = document.getElementById('hero-greeting');
     if (greetingEl) {
-      if (currentMode === 'study') {
-        greetingEl.innerHTML = `오늘의 목표를 향해 나만의 페이스로 완주해요 ✨ <span class="text-purple-600 font-bold">[학습 모드]</span>`;
-      } else {
-        greetingEl.innerHTML = `학습 현황을 확인하고 따뜻한 격려와 응원을 남겨보세요 💖 <span class="text-indigo-600 font-bold">[체크 모드]</span>`;
-      }
+      greetingEl.innerHTML = `
+        <div class="space-y-2">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-base sm:text-lg font-extrabold text-slate-800">예비고1 63일 메타인지 완주</span>
+            <span class="text-xs font-bold px-2.5 py-0.5 rounded-full ${currentMode === 'study' ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-indigo-100 text-indigo-700 border border-indigo-200'}">
+              ${currentMode === 'study' ? '📖 학습 모드' : '🔍 체크 모드'}
+            </span>
+          </div>
+          <div class="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-purple-900 bg-purple-50/90 border border-purple-200/80 px-3.5 py-2 rounded-2xl shadow-2xs">
+            <span class="text-base">💡</span>
+            <span class="leading-relaxed">${getDailyQuote()}</span>
+          </div>
+        </div>
+      `;
     }
 
     // Days & D-Day
@@ -535,7 +563,28 @@
       return;
     }
 
-    let cardsHtml = '';
+    let modeBanner = '';
+    if (currentMode === 'study') {
+      modeBanner = `
+        <div class="flex items-center justify-between p-3 bg-purple-50/80 rounded-2xl border border-purple-200 text-xs text-purple-900 mb-1">
+          <span class="font-bold flex items-center gap-1.5">
+            <span>📖</span> 학습 모드
+          </span>
+          <span class="text-[11px] text-purple-700 font-medium">완료 체크 및 메타인지 신호등(🟢/🟡/🔴)을 기록하세요.</span>
+        </div>
+      `;
+    } else {
+      modeBanner = `
+        <div class="flex items-center justify-between p-3 bg-indigo-50/80 rounded-2xl border border-indigo-200 text-xs text-indigo-900 mb-1">
+          <span class="font-bold flex items-center gap-1.5">
+            <span>🔍</span> 체크 모드
+          </span>
+          <span class="text-[11px] text-indigo-700 font-medium">진도를 점검하고 하단에서 격려 스탬프를 남길 수 있습니다.</span>
+        </div>
+      `;
+    }
+
+    let cardsHtml = modeBanner;
 
     currentTasks.forEach(task => {
       const isCompleted = task.status === 'completed';
@@ -662,7 +711,7 @@
                   <span class="text-[10px] text-slate-400 flex-shrink-0">${c.time || ''}</span>
                 </div>
               `;}).join('') : `
-                <p class="text-xs text-slate-400 italic py-1">아직 등록된 응원이 없습니다. 상단에서 [체크 모드]로 전환하고 격려 한마디를 남겨보세요!</p>
+                <p class="text-xs text-slate-400 italic py-1">${currentMode === 'check' ? '남겨진 피드백이 없습니다. 아래에서 스탬프를 눌러 응원할 수 있습니다.' : '남겨진 피드백이 없습니다.'}</p>
               `}
             </div>
 
@@ -1216,6 +1265,178 @@
         alert('기본 커리큘럼으로 초기화되었습니다.');
         closeSettingsModal();
       }
+    }
+  };
+
+  // --- Subject Full Course Modal (대단원 및 전과정 확인) ---
+  window.openSubjectDetailModal = function(subjectName) {
+    const modal = document.getElementById('subject-detail-modal');
+    const titleEl = document.getElementById('subject-modal-title');
+    const badgeEl = document.getElementById('subject-modal-badge');
+    const contentEl = document.getElementById('subject-modal-content');
+
+    if (!modal || !contentEl) return;
+
+    const subTasks = tasks.filter(t => t.subject === subjectName && !t.isAcademy);
+    const totalCount = subTasks.length;
+    const completedCount = subTasks.filter(t => t.status === 'completed').length;
+    const percent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+    const greenCount = subTasks.filter(t => t.understanding === 'green').length;
+    const yellowCount = subTasks.filter(t => t.understanding === 'yellow').length;
+    const redCount = subTasks.filter(t => t.understanding === 'red').length;
+    const uncheckCount = subTasks.filter(t => !t.understanding).length;
+
+    let icon = '📚';
+    let themeBg = 'bg-purple-100 text-purple-800 border-purple-200';
+    let barColor = 'bg-purple-500';
+    if (subjectName === '통합과학1') {
+      icon = '🔬';
+      themeBg = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      barColor = 'bg-emerald-500';
+    } else if (subjectName === '한국사1') {
+      icon = '📜';
+      themeBg = 'bg-amber-100 text-amber-800 border-amber-200';
+      barColor = 'bg-amber-500';
+    } else if (subjectName === '통합사회1') {
+      icon = '🌍';
+      themeBg = 'bg-sky-100 text-sky-800 border-sky-200';
+      barColor = 'bg-sky-500';
+    }
+
+    if (titleEl) titleEl.textContent = `${subjectName} 전체 과정 로드맵`;
+    if (badgeEl) badgeEl.innerHTML = `
+      <span class="px-2.5 py-1 rounded-full text-xs font-bold border ${themeBg}">
+        ${icon} 2022 개정 비상 완자
+      </span>
+      <span class="text-xs font-semibold text-slate-500">
+        총 ${totalCount}개 단원 (${percent}% 완주)
+      </span>
+    `;
+
+    // Group tasks by Chapter
+    const chaptersMap = new Map();
+    subTasks.forEach(task => {
+      const ch = task.chapter || '기타';
+      if (!chaptersMap.has(ch)) {
+        chaptersMap.set(ch, []);
+      }
+      chaptersMap.get(ch).push(task);
+    });
+
+    let html = `
+      <!-- Progress Bar & Summary Stats in Modal -->
+      <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 mb-5">
+        <div class="flex items-center justify-between text-xs sm:text-sm">
+          <span class="font-bold text-slate-700">전체 진도율</span>
+          <span class="font-extrabold text-slate-800">${completedCount} / ${totalCount} 단원 완료 (${percent}%)</span>
+        </div>
+        <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+          <div class="h-full ${barColor} rounded-full transition-all" style="width: ${percent}%"></div>
+        </div>
+        <div class="grid grid-cols-4 gap-2 pt-1 text-center text-xs">
+          <div class="p-2 rounded-xl bg-white border border-slate-200/80">
+            <div class="text-[10px] text-slate-400 font-medium">🟢 완벽이해</div>
+            <div class="font-bold text-emerald-600 text-sm mt-0.5">${greenCount}개</div>
+          </div>
+          <div class="p-2 rounded-xl bg-white border border-slate-200/80">
+            <div class="text-[10px] text-slate-400 font-medium">🟡 문제더풀기</div>
+            <div class="font-bold text-amber-600 text-sm mt-0.5">${yellowCount}개</div>
+          </div>
+          <div class="p-2 rounded-xl bg-white border border-slate-200/80">
+            <div class="text-[10px] text-slate-400 font-medium">🔴 개념헷갈림</div>
+            <div class="font-bold text-rose-600 text-sm mt-0.5">${redCount}개</div>
+          </div>
+          <div class="p-2 rounded-xl bg-white border border-slate-200/80">
+            <div class="text-[10px] text-slate-400 font-medium">미체크</div>
+            <div class="font-bold text-slate-500 text-sm mt-0.5">${uncheckCount}개</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chapter Groups -->
+      <div class="space-y-4">
+    `;
+
+    chaptersMap.forEach((tasksList, chapterName) => {
+      const chCompleted = tasksList.filter(t => t.status === 'completed').length;
+      html += `
+        <div class="border border-slate-200/90 rounded-2xl overflow-hidden bg-white shadow-2xs">
+          <div class="bg-slate-50/90 px-4 py-2.5 border-b border-slate-200/80 flex items-center justify-between">
+            <h5 class="text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-1.5">
+              <span>📌</span> ${chapterName}
+            </h5>
+            <span class="text-[11px] font-semibold text-slate-500">
+              ${chCompleted} / ${tasksList.length} 단원 완료
+            </span>
+          </div>
+          <div class="divide-y divide-slate-100">
+      `;
+
+      tasksList.forEach(t => {
+        const isDone = t.status === 'completed';
+        let lightText = '-';
+        if (t.understanding === 'green') lightText = '🟢 완벽이해';
+        else if (t.understanding === 'yellow') lightText = '🟡 문제더풀기';
+        else if (t.understanding === 'red') lightText = '🔴 개념헷갈림';
+
+        html += `
+          <div class="p-3 sm:p-4 hover:bg-purple-50/30 transition-colors flex items-start justify-between gap-3 cursor-pointer group" onclick="window.jumpToTaskDate('${t.plannedDate}')">
+            <div class="flex items-start gap-3 flex-1 min-w-0">
+              <span class="mt-0.5 w-5 h-5 rounded-md flex items-center justify-center text-xs font-bold flex-shrink-0 ${isDone ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-300 border border-slate-200'}">
+                ${isDone ? '✓' : ''}
+              </span>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-purple-700 transition-colors ${isDone ? 'line-through text-slate-400' : ''}">${t.unit}</span>
+                  <span class="text-[11px] text-slate-400 font-medium whitespace-nowrap">📅 ${t.plannedDate} (${t.weekday || ''})</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">${t.summary || ''}</p>
+                ${t.keywords && t.keywords.length > 0 ? `
+                  <div class="mt-1.5 flex flex-wrap gap-1">
+                    ${t.keywords.map(kw => `<span class="text-[10px] text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded font-medium">${kw}</span>`).join('')}
+                  </div>
+                ` : ''}
+                ${t.daughterMemo ? `
+                  <div class="mt-1.5 text-xs text-slate-600 bg-purple-50/50 p-2 rounded-xl border border-purple-100">
+                    💡 <span class="font-medium">${t.daughterMemo}</span>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
+              ${t.understanding ? `<span class="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">${lightText}</span>` : ''}
+              <button class="text-xs font-bold text-purple-600 group-hover:text-purple-800 bg-purple-50 group-hover:bg-purple-100 px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap">
+                학습 보기 →
+              </button>
+            </div>
+          </div>
+        `;
+      });
+
+      html += `
+          </div>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+    contentEl.innerHTML = html;
+    modal.classList.remove('hidden');
+  };
+
+  window.closeSubjectDetailModal = function() {
+    const modal = document.getElementById('subject-detail-modal');
+    if (modal) modal.classList.add('hidden');
+  };
+
+  window.jumpToTaskDate = function(dateStr) {
+    closeSubjectDetailModal();
+    window.selectCalendarDate(dateStr);
+    window.switchTab('calendar');
+    const cardEl = document.getElementById('daily-tasks-container');
+    if (cardEl) {
+      cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
