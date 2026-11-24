@@ -261,17 +261,15 @@
         </div>
 
       </div>
-            <div id="stat-society-bar" class="h-full bg-sky-500 rounded-full transition-all" style="width: 0%"></div>
-          </div>
-        </div>
-
-      </div>
     </section>
 
     <!-- Navigation Tabs Bar -->
     <div class="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
       <button id="tab-btn-calendar" onclick="window.switchTab('calendar')" class="px-4 py-2 rounded-xl text-sm font-bold bg-purple-600 text-white shadow-xs transition-all flex items-center gap-1.5 whitespace-nowrap">
         <span>📅</span> 캘린더 & 오늘 학습
+      </button>
+      <button id="tab-btn-weekly" onclick="window.switchTab('weekly')" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all flex items-center gap-1.5 whitespace-nowrap">
+        <span>📆</span> 주간 플래너
       </button>
       <button id="tab-btn-metacognition" onclick="window.switchTab('metacognition')" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all flex items-center gap-1.5 whitespace-nowrap">
         <span>🚦</span> 메타인지 오답 노트
@@ -291,8 +289,11 @@
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-2">
             <h3 id="calendar-month-title" class="text-lg sm:text-xl font-bold text-slate-800">2026년 12월</h3>
-            <button onclick="window.goToTodayCalendar()" class="px-2.5 py-1 text-xs font-semibold bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-lg transition-colors">
+            <button onclick="window.goToTodayCalendar()" class="px-2.5 py-1 text-xs font-semibold bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-lg transition-colors cursor-pointer">
               오늘
+            </button>
+            <button onclick="window.switchTab('weekly')" class="px-2.5 py-1 text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg transition-colors flex items-center gap-1 cursor-pointer">
+              <span>📆</span> 주간 뷰
             </button>
           </div>
           <div class="flex items-center gap-1">
@@ -359,6 +360,51 @@
 
       </section>
 
+    </div>
+
+    <!-- TAB: WEEKLY PLANNER (주간 단위 보기) -->
+    <div id="tab-content-weekly" class="hidden space-y-5">
+      <!-- Weekly Header & Controls -->
+      <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <h3 id="weekly-title" class="text-lg sm:text-xl font-extrabold text-slate-800">
+              1주차 주간 플래너
+            </h3>
+            <span id="weekly-range" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+              2026.11.30 ~ 2026.12.06
+            </span>
+            <button onclick="window.goToCurrentWeek()" class="px-2.5 py-1 text-xs font-semibold bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg transition-colors cursor-pointer">
+              이번 주로 이동
+            </button>
+          </div>
+
+          <!-- Week Navigation Buttons -->
+          <div class="flex items-center gap-1.5">
+            <button onclick="window.changeWeeklyWeek(-1)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer">
+              ◀ 이전 주
+            </button>
+            <button onclick="window.changeWeeklyWeek(1)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer">
+              다음 주 ▶
+            </button>
+          </div>
+        </div>
+
+        <!-- Week Number Pills (1..9) -->
+        <div id="weekly-pills-bar" class="flex items-center gap-1.5 overflow-x-auto pb-1">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Weekly Summary Progress Card -->
+        <div id="weekly-stats-bar" class="p-4 bg-purple-50/50 rounded-2xl border border-purple-100/80">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- 7-Day Columns Grid -->
+      <div id="weekly-days-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3 sm:gap-4 items-start">
+        <!-- Populated by JS -->
+      </div>
     </div>
 
     <!-- TAB 2: METACOGNITION NOTES (Traffic Light Filter View) -->
@@ -652,7 +698,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="data.js?v=1.1.2"></script>
-  <script src="app.js?v=1.1.2"></script>
+  <script src="data.js?v=1.1.3"></script>
+  <script src="app.js?v=1.1.3"></script>
 </body>
 </html>

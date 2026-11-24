@@ -22,7 +22,8 @@
   let tasks = [];
   let currentMode = localStorage.getItem(STORAGE_KEYS.MODE) || 'study'; // 'study' | 'check'
   let currentSupporter = localStorage.getItem(STORAGE_KEYS.SUPPORTER) || '서포터 1'; // '서포터 1' | '서포터 2'
-  let activeTab = localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB) || 'calendar'; // 'calendar' | 'metacognition' | 'roadmap'
+  let activeTab = localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB) || 'calendar'; // 'calendar' | 'weekly' | 'metacognition' | 'roadmap'
+  let currentWeeklyWeek = 1; // 1..9
   let metaFilter = 'all'; // 'all' | 'red' | 'yellow' | 'green' | 'academy'
   let roadmapWeekFilter = 'all'; // 'all' | 1..9
   let selectedDate = DEFAULT_START_DATE;
@@ -1015,12 +1016,216 @@
     }).join('');
   }
 
+  // --- Weekly Planner View Logic ---
+  function getWeekDateRange(weekNum) {
+    const startDate = new Date(2026, 10, 30); // Nov 30, 2026
+    const weekStart = new Date(startDate);
+    weekStart.setDate(startDate.getDate() + (weekNum - 1) * 7);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+
+    const fmt = d => `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+    return {
+      startDate: weekStart,
+      endDate: weekEnd,
+      rangeText: `${fmt(weekStart)} ~ ${fmt(weekEnd)}`
+    };
+  }
+
+  window.changeWeeklyWeek = function(delta) {
+    currentWeeklyWeek = Math.max(1, Math.min(9, currentWeeklyWeek + delta));
+    renderWeeklyView();
+  };
+
+  window.setWeeklyWeek = function(weekNum) {
+    currentWeeklyWeek = weekNum;
+    renderWeeklyView();
+  };
+
+  window.goToCurrentWeek = function() {
+    const today = getTodayDateStr();
+    const diff = getDayDiff(DEFAULT_START_DATE, today);
+    const week = Math.max(1, Math.min(9, Math.floor(diff / 7) + 1));
+    currentWeeklyWeek = week;
+    renderWeeklyView();
+  };
+
+  function renderWeeklyView() {
+    const titleEl = document.getElementById('weekly-title');
+    const rangeEl = document.getElementById('weekly-range');
+    const pillsContainer = document.getElementById('weekly-pills-bar');
+    const statsContainer = document.getElementById('weekly-stats-bar');
+    const daysGrid = document.getElementById('weekly-days-grid');
+
+    if (!titleEl || !daysGrid) return;
+
+    const range = getWeekDateRange(currentWeeklyWeek);
+    titleEl.textContent = `${currentWeeklyWeek}주차 주간 플래너`;
+    if (rangeEl) rangeEl.textContent = range.rangeText;
+
+    // Week Pills
+    if (pillsContainer) {
+      let pillsHtml = '';
+      for (let w = 1; w <= 9; w++) {
+        const isCurrent = w === currentWeeklyWeek;
+        pillsHtml += `
+          <button onclick="window.setWeeklyWeek(${w})" class="px-3 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${isCurrent ? 'bg-purple-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+            ${w}주차${w === 9 ? '(총복습)' : ''}
+          </button>
+        `;
+      }
+      pillsContainer.innerHTML = pillsHtml;
+    }
+
+    // Weekly Tasks & Stats
+    const weekTasks = tasks.filter(t => t.week === currentWeeklyWeek);
+    const completedTasks = weekTasks.filter(t => t.status === 'completed');
+    const percent = weekTasks.length > 0 ? Math.round((completedTasks.length / weekTasks.length) * 100) : 0;
+    const greenCount = weekTasks.filter(t => t.understanding === 'green').length;
+    const yellowCount = weekTasks.filter(t => t.understanding === 'yellow').length;
+    const redCount = weekTasks.filter(t => t.understanding === 'red').length;
+
+    if (statsContainer) {
+      statsContainer.innerHTML = `
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div>
+              <div class="text-[11px] font-bold text-slate-400">${currentWeeklyWeek}주차 완주율</div>
+              <div class="text-xl sm:text-2xl font-black text-purple-700">${percent}%</div>
+            </div>
+            <div class="h-8 w-px bg-purple-200"></div>
+            <div>
+              <div class="text-[11px] font-bold text-slate-400">완료 단원</div>
+              <div class="text-xs sm:text-sm font-bold text-slate-700">${completedTasks.length} / ${weekTasks.length} 단원</div>
+            </div>
+          </div>
+
+          <div class="flex-1 max-w-xs w-full">
+            <div class="w-full h-2 bg-purple-200/80 rounded-full overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full transition-all" style="width: ${percent}%"></div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1.5 text-xs font-semibold">
+            <span class="px-2 py-0.5 rounded-md bg-white border border-slate-200/80">🟢 완벽: ${greenCount}</span>
+            <span class="px-2 py-0.5 rounded-md bg-white border border-slate-200/80">🟡 풀기: ${yellowCount}</span>
+            <span class="px-2 py-0.5 rounded-md bg-white border border-slate-200/80">🔴 헷갈림: ${redCount}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // 7 Days Columns
+    let daysHtml = '';
+    const weekdaysKr = ['월', '화', '수', '목', '금', '토', '일'];
+    const startDate = new Date(2026, 10, 30);
+    const weekStart = new Date(startDate);
+    weekStart.setDate(startDate.getDate() + (currentWeeklyWeek - 1) * 7);
+
+    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+      const curDate = new Date(weekStart);
+      curDate.setDate(weekStart.getDate() + dayOffset);
+      const y = curDate.getFullYear();
+      const m = String(curDate.getMonth() + 1).padStart(2, '0');
+      const d = String(curDate.getDate()).padStart(2, '0');
+      const curDateStr = `${y}-${m}-${d}`;
+
+      const isToday = curDateStr === getTodayDateStr();
+      const dayTasks = tasks.filter(t => t.plannedDate === curDateStr);
+      const completedDayTasks = dayTasks.filter(t => t.status === 'completed');
+      const isAllDone = dayTasks.length > 0 && completedDayTasks.length === dayTasks.length;
+      const dayDiff = getDayDiff(DEFAULT_START_DATE, curDateStr) + 1;
+
+      let weekdayColor = 'text-slate-700';
+      if (dayOffset === 5) weekdayColor = 'text-blue-600'; // Sat
+      if (dayOffset === 6) weekdayColor = 'text-rose-600'; // Sun
+
+      daysHtml += `
+        <div class="bg-white rounded-2xl border ${isToday ? 'border-purple-300 ring-2 ring-purple-200 shadow-sm' : 'border-slate-200 shadow-2xs'} flex flex-col justify-between overflow-hidden">
+          <!-- Day Column Header -->
+          <div class="p-3 border-b border-slate-100 ${isToday ? 'bg-purple-50/80' : 'bg-slate-50/70'} flex items-center justify-between">
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span class="font-extrabold text-sm ${weekdayColor}">(${weekdaysKr[dayOffset]})</span>
+                <span class="text-xs font-bold text-slate-800">${curDate.getMonth() + 1}/${curDate.getDate()}</span>
+                ${isToday ? '<span class="text-[10px] font-extrabold bg-purple-600 text-white px-1.5 py-0.5 rounded-full">오늘</span>' : ''}
+              </div>
+              <span class="text-[10px] text-slate-400 font-medium">Day ${dayDiff}</span>
+            </div>
+            <div>
+              <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${isAllDone ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">
+                ${completedDayTasks.length}/${dayTasks.length}
+              </span>
+            </div>
+          </div>
+
+          <!-- Tasks List in this Day -->
+          <div class="p-2.5 space-y-2 flex-1 min-h-[160px]">
+            ${dayTasks.length > 0 ? dayTasks.map(t => {
+              const isDone = t.status === 'completed';
+              let badgeColor = 'bg-slate-100 text-slate-700 border-slate-200';
+              if (t.subject === '통합과학1') badgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+              if (t.subject === '한국사1') badgeColor = 'bg-amber-50 text-amber-700 border-amber-200';
+              if (t.subject === '통합사회1') badgeColor = 'bg-sky-50 text-sky-700 border-sky-200';
+              if (t.isAcademy && t.academyType === 'english') badgeColor = 'bg-purple-50 text-purple-700 border-purple-200';
+              if (t.isAcademy && t.academyType === 'math') badgeColor = 'bg-rose-50 text-rose-700 border-rose-200';
+              if (t.isClinic) badgeColor = 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200';
+
+              let lightIcon = '';
+              if (t.understanding === 'green') lightIcon = '🟢';
+              else if (t.understanding === 'yellow') lightIcon = '🟡';
+              else if (t.understanding === 'red') lightIcon = '🔴';
+
+              return `
+                <div class="p-2.5 rounded-xl border ${isDone ? 'bg-slate-50/80 border-slate-200/80 opacity-80' : 'bg-white border-slate-200 shadow-2xs'} space-y-1.5 transition-all">
+                  <div class="flex items-start justify-between gap-1">
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${badgeColor}">
+                      ${t.subject}
+                    </span>
+                    <button onclick="window.toggleTaskCompletion('${t.id}')" class="w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer ${isDone ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white hover:border-purple-400'}">
+                      ${isDone ? '<span class="text-[10px] font-bold">✓</span>' : ''}
+                    </button>
+                  </div>
+                  <div class="text-xs font-bold text-slate-800 leading-snug ${isDone ? 'line-through text-slate-400' : ''}">
+                    ${t.unit}
+                  </div>
+                  <div class="flex items-center justify-between pt-1 text-[11px]">
+                    <span class="text-xs">${lightIcon}</span>
+                    <button onclick="window.selectCalendarDate('${t.plannedDate}'); window.switchTab('calendar');" class="text-[11px] font-semibold text-purple-600 hover:text-purple-800 underline cursor-pointer">
+                      상세
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('') : `
+              <div class="h-full flex items-center justify-center p-4 text-center text-slate-300 text-xs italic">
+                일정 없음
+              </div>
+            `}
+          </div>
+
+          <!-- Bottom Day Action -->
+          <div class="p-2 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-[11px]">
+            <button onclick="window.selectCalendarDate('${curDateStr}'); window.switchTab('calendar');" class="text-slate-500 hover:text-purple-700 font-medium cursor-pointer">
+              일일 상세 →
+            </button>
+            <button onclick="window.selectCalendarDate('${curDateStr}'); window.openAddTaskModal();" class="text-purple-600 hover:text-purple-800 font-bold cursor-pointer">
+              + 추가
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    daysGrid.innerHTML = daysHtml;
+  }
+
   // --- Tab Navigation ---
   window.switchTab = function(tabName) {
     activeTab = tabName;
     localStorage.setItem(STORAGE_KEYS.ACTIVE_TAB, tabName);
 
-    const tabs = ['calendar', 'metacognition', 'roadmap'];
+    const tabs = ['calendar', 'weekly', 'metacognition', 'roadmap'];
     tabs.forEach(t => {
       const btn = document.getElementById(`tab-btn-${t}`);
       const content = document.getElementById(`tab-content-${t}`);
@@ -1038,6 +1243,8 @@
     if (tabName === 'calendar') {
       renderCalendar();
       renderDailyCards();
+    } else if (tabName === 'weekly') {
+      renderWeeklyView();
     } else if (tabName === 'metacognition') {
       renderMetacognitionNotes();
     } else if (tabName === 'roadmap') {
@@ -1559,6 +1766,8 @@
     if (activeTab === 'calendar') {
       renderCalendar();
       renderDailyCards();
+    } else if (activeTab === 'weekly') {
+      renderWeeklyView();
     } else if (activeTab === 'metacognition') {
       renderMetacognitionNotes();
     } else if (activeTab === 'roadmap') {
