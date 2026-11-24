@@ -271,11 +271,11 @@
       <button id="tab-btn-weekly" onclick="window.switchTab('weekly')" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all flex items-center gap-1.5 whitespace-nowrap">
         <span>📆</span> 주간 플래너
       </button>
-      <button id="tab-btn-metacognition" onclick="window.switchTab('metacognition')" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all flex items-center gap-1.5 whitespace-nowrap">
-        <span>🚦</span> 메타인지 오답 노트
-      </button>
       <button id="tab-btn-roadmap" onclick="window.switchTab('roadmap')" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all flex items-center gap-1.5 whitespace-nowrap">
         <span>🗺️</span> 전체 63일 로드맵
+      </button>
+      <button id="tab-btn-metacognition" onclick="window.switchTab('metacognition')" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all flex items-center gap-1.5 whitespace-nowrap">
+        <span>🚦</span> 메타인지 오답 노트
       </button>
     </div>
 
@@ -407,39 +407,6 @@
       </div>
     </div>
 
-    <!-- TAB 2: METACOGNITION NOTES (Traffic Light Filter View) -->
-    <div id="tab-content-metacognition" class="hidden space-y-6">
-      
-      <!-- Top Action Bar -->
-      <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h3 class="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
-            <span>🚦 메타인지 오답 & 핵심 개념 인출 노트</span>
-          </h3>
-          <p class="text-xs sm:text-sm text-slate-500 mt-1">
-            이해도 신호등(🟢/🟡/🔴)별로 정리된 단원과 직접 작성한 한 줄 메타인지 메모를 한눈에 검토하세요.
-          </p>
-        </div>
-
-        <!-- Copy Markdown Report Button -->
-        <button onclick="window.copyMarkdownReport()" class="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs flex items-center justify-center gap-2 flex-shrink-0">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
-          📋 전체 학습 리포트 마크다운 복사
-        </button>
-      </div>
-
-      <!-- Filter Buttons Bar -->
-      <div id="metanotes-filter-bar" class="flex flex-wrap items-center gap-2">
-        <!-- Populated by JS -->
-      </div>
-
-      <!-- Notes Grid -->
-      <div id="metanotes-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <!-- Populated by JS -->
-      </div>
-
-    </div>
-
     <!-- TAB 3: FULL ROADMAP VIEW -->
     <div id="tab-content-roadmap" class="hidden space-y-6">
       
@@ -475,6 +442,39 @@
             </tbody>
           </table>
         </div>
+      </div>
+
+    </div>
+
+    <!-- TAB 4: METACOGNITION NOTES (Traffic Light Filter View) -->
+    <div id="tab-content-metacognition" class="hidden space-y-6">
+      
+      <!-- Top Action Bar -->
+      <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h3 class="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
+            <span>🚦 메타인지 오답 & 핵심 개념 인출 노트</span>
+          </h3>
+          <p class="text-xs sm:text-sm text-slate-500 mt-1">
+            이해도 신호등(🟢/🟡/🔴)별로 정리된 단원과 직접 작성한 한 줄 메타인지 메모를 한눈에 검토하세요.
+          </p>
+        </div>
+
+        <!-- Copy Markdown Report Button -->
+        <button onclick="window.copyMarkdownReport()" class="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs flex items-center justify-center gap-2 flex-shrink-0">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+          📋 전체 학습 리포트 마크다운 복사
+        </button>
+      </div>
+
+      <!-- Filter Buttons Bar -->
+      <div id="metanotes-filter-bar" class="flex flex-wrap items-center gap-2">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Notes Grid -->
+      <div id="metanotes-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Populated by JS -->
       </div>
 
     </div>
@@ -698,7 +698,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="data.js?v=1.1.3"></script>
-  <script src="app.js?v=1.1.3"></script>
+  <script src="data.js?v=1.1.4"></script>
+  <script src="app.js?v=1.1.4"></script>
 </body>
 </html>

@@ -1225,17 +1225,17 @@
     activeTab = tabName;
     localStorage.setItem(STORAGE_KEYS.ACTIVE_TAB, tabName);
 
-    const tabs = ['calendar', 'weekly', 'metacognition', 'roadmap'];
+    const tabs = ['calendar', 'weekly', 'roadmap', 'metacognition'];
     tabs.forEach(t => {
       const btn = document.getElementById(`tab-btn-${t}`);
       const content = document.getElementById(`tab-content-${t}`);
       if (!btn || !content) return;
 
       if (t === tabName) {
-        btn.className = 'px-4 py-2 rounded-xl text-sm font-bold bg-purple-600 text-white shadow-xs transition-all flex items-center gap-1.5';
+        btn.className = 'px-4 py-2 rounded-xl text-sm font-bold bg-purple-600 text-white shadow-xs transition-all flex items-center gap-1.5 whitespace-nowrap';
         content.classList.remove('hidden');
       } else {
-        btn.className = 'px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all flex items-center gap-1.5';
+        btn.className = 'px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all flex items-center gap-1.5 whitespace-nowrap';
         content.classList.add('hidden');
       }
     });
@@ -1245,10 +1245,10 @@
       renderDailyCards();
     } else if (tabName === 'weekly') {
       renderWeeklyView();
-    } else if (tabName === 'metacognition') {
-      renderMetacognitionNotes();
     } else if (tabName === 'roadmap') {
       renderRoadmapTable();
+    } else if (tabName === 'metacognition') {
+      renderMetacognitionNotes();
     }
   };
 
@@ -1768,10 +1768,10 @@
       renderDailyCards();
     } else if (activeTab === 'weekly') {
       renderWeeklyView();
-    } else if (activeTab === 'metacognition') {
-      renderMetacognitionNotes();
     } else if (activeTab === 'roadmap') {
       renderRoadmapTable();
+    } else if (activeTab === 'metacognition') {
+      renderMetacognitionNotes();
     }
   }
 
