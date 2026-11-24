@@ -1,22 +1,92 @@
 // MetaLog (메타로그) Initial Dataset & Configuration
 window.METALOG_CONFIG = {
-  startDate: "2026-11-30",
-  endDate: "2027-01-31",
-  totalDays: 63,
-  totalWeeks: 9,
-  subjects: [
-    { id: "통합과학1", name: "통합과학 1", targetUnits: 17, color: "emerald", badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-300" },
-    { id: "한국사1", name: "한국사 1", targetUnits: 15, color: "amber", badgeColor: "bg-amber-100 text-amber-800 border-amber-300" },
-    { id: "통합사회1", name: "통합사회 1", targetUnits: 14, color: "sky", badgeColor: "bg-sky-100 text-sky-800 border-sky-300" }
+  "startDate": "2026-11-30",
+  "endDate": "2027-01-31",
+  "totalDays": 63,
+  "totalWeeks": 9,
+  "textbooks": {
+    "totalAllPages": 856,
+    "totalMainPages": 544,
+    "totalAppendixPages": 96,
+    "totalAnswerPages": 216
+  },
+  "subjects": [
+    {
+      "id": "통합과학1",
+      "name": "통합과학 1",
+      "targetUnits": 17,
+      "color": "emerald",
+      "badgeColor": "bg-emerald-100 text-emerald-800 border-emerald-300",
+      "publisher": "비상교육 (2022 개정)",
+      "totalPages": 376,
+      "mainPages": 224,
+      "appendixPages": 48,
+      "answerPages": 104,
+      "pageSummary": "총 376쪽 (본문 224p · 부록 48p · 해설 104p)"
+    },
+    {
+      "id": "한국사1",
+      "name": "한국사 1",
+      "targetUnits": 15,
+      "color": "amber",
+      "badgeColor": "bg-amber-100 text-amber-800 border-amber-300",
+      "publisher": "비상교육 (2022 개정)",
+      "totalPages": 256,
+      "mainPages": 168,
+      "appendixPages": 24,
+      "answerPages": 64,
+      "pageSummary": "총 256쪽 (본문 168p · 부록 24p · 해설 64p)"
+    },
+    {
+      "id": "통합사회1",
+      "name": "통합사회 1",
+      "targetUnits": 14,
+      "color": "sky",
+      "badgeColor": "bg-sky-100 text-sky-800 border-sky-300",
+      "publisher": "비상교육 (2022 개정)",
+      "totalPages": 224,
+      "mainPages": 152,
+      "appendixPages": 24,
+      "answerPages": 48,
+      "pageSummary": "총 224쪽 (본문 152p · 부록 24p · 해설 48p)"
+    }
   ],
-  stamps: [
-    { id: "stamp_1", emoji: "👏", text: "꾸준함 최고!" },
-    { id: "stamp_2", emoji: "🔥", text: "집중력 굿!" },
-    { id: "stamp_3", emoji: "🍰", text: "주말 간식 획득" },
-    { id: "stamp_4", emoji: "⭐", text: "넌 최고야" },
-    { id: "stamp_5", emoji: "💯", text: "성실왕!" },
-    { id: "stamp_6", emoji: "☕", text: "푹 쉬렴" },
-    { id: "stamp_7", emoji: "💖", text: "언제나 응원해" }
+  "stamps": [
+    {
+      "id": "stamp_1",
+      "emoji": "👏",
+      "text": "꾸준함 최고!"
+    },
+    {
+      "id": "stamp_2",
+      "emoji": "🔥",
+      "text": "집중력 굿!"
+    },
+    {
+      "id": "stamp_3",
+      "emoji": "🍰",
+      "text": "주말 간식 획득"
+    },
+    {
+      "id": "stamp_4",
+      "emoji": "⭐",
+      "text": "넌 최고야"
+    },
+    {
+      "id": "stamp_5",
+      "emoji": "💯",
+      "text": "성실왕!"
+    },
+    {
+      "id": "stamp_6",
+      "emoji": "☕",
+      "text": "푹 쉬렴"
+    },
+    {
+      "id": "stamp_7",
+      "emoji": "💖",
+      "text": "언제나 응원해"
+    }
   ]
 };
 
@@ -45,7 +115,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.8 ~ 19",
+    "pageCount": 12
   },
   {
     "id": "acad_2",
@@ -73,7 +145,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_3",
@@ -98,7 +172,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.32 ~ 43",
+    "pageCount": 12
   },
   {
     "id": "task_4",
@@ -124,7 +200,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.20 ~ 31",
+    "pageCount": 12
   },
   {
     "id": "acad_5",
@@ -152,7 +230,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_6",
@@ -178,7 +258,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.8 ~ 17",
+    "pageCount": 10
   },
   {
     "id": "acad_7",
@@ -206,7 +288,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_8",
@@ -231,7 +315,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.44 ~ 55",
+    "pageCount": 12
   },
   {
     "id": "task_9",
@@ -256,7 +342,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.56 ~ 69",
+    "pageCount": 14
   },
   {
     "id": "acad_10",
@@ -284,7 +372,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_11",
@@ -309,7 +399,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.18 ~ 27",
+    "pageCount": 10
   },
   {
     "id": "acad_12",
@@ -337,7 +429,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_13",
@@ -363,7 +457,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.32 ~ 41",
+    "pageCount": 10
   },
   {
     "id": "acad_14",
@@ -391,7 +487,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_15",
@@ -416,7 +514,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.70 ~ 83",
+    "pageCount": 14
   },
   {
     "id": "task_16",
@@ -441,7 +541,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.42 ~ 51",
+    "pageCount": 10
   },
   {
     "id": "acad_17",
@@ -469,7 +571,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_18",
@@ -494,7 +598,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.28 ~ 39",
+    "pageCount": 12
   },
   {
     "id": "acad_19",
@@ -522,7 +628,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_20",
@@ -547,7 +655,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.84 ~ 97",
+    "pageCount": 14
   },
   {
     "id": "task_21",
@@ -572,7 +682,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.98 ~ 111",
+    "pageCount": 14
   },
   {
     "id": "acad_22",
@@ -600,7 +712,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_23",
@@ -626,7 +740,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.40 ~ 53",
+    "pageCount": 14
   },
   {
     "id": "acad_24",
@@ -654,7 +770,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_25",
@@ -680,7 +798,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.52 ~ 61",
+    "pageCount": 10
   },
   {
     "id": "acad_26",
@@ -708,7 +828,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_27",
@@ -733,7 +855,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.112 ~ 123",
+    "pageCount": 12
   },
   {
     "id": "task_28",
@@ -759,7 +883,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.62 ~ 71",
+    "pageCount": 10
   },
   {
     "id": "acad_29",
@@ -787,7 +913,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_30",
@@ -812,7 +940,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.54 ~ 65",
+    "pageCount": 12
   },
   {
     "id": "acad_31",
@@ -840,7 +970,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_32",
@@ -865,7 +997,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.126 ~ 139",
+    "pageCount": 14
   },
   {
     "id": "task_33",
@@ -890,7 +1024,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.140 ~ 153",
+    "pageCount": 14
   },
   {
     "id": "acad_34",
@@ -918,7 +1054,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_35",
@@ -943,7 +1081,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.66 ~ 77",
+    "pageCount": 12
   },
   {
     "id": "acad_36",
@@ -971,7 +1111,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_37",
@@ -997,7 +1139,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.72 ~ 83",
+    "pageCount": 12
   },
   {
     "id": "acad_38",
@@ -1025,7 +1169,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_39",
@@ -1050,7 +1196,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.154 ~ 167",
+    "pageCount": 14
   },
   {
     "id": "task_40",
@@ -1076,7 +1224,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.84 ~ 95",
+    "pageCount": 12
   },
   {
     "id": "acad_41",
@@ -1104,7 +1254,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_42",
@@ -1130,7 +1282,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.78 ~ 89",
+    "pageCount": 12
   },
   {
     "id": "acad_43",
@@ -1158,7 +1312,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_44",
@@ -1183,7 +1339,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.168 ~ 181",
+    "pageCount": 14
   },
   {
     "id": "task_45",
@@ -1208,7 +1366,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.182 ~ 193",
+    "pageCount": 12
   },
   {
     "id": "acad_46",
@@ -1236,7 +1396,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_47",
@@ -1262,7 +1424,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.90 ~ 99",
+    "pageCount": 10
   },
   {
     "id": "acad_48",
@@ -1290,7 +1454,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_49",
@@ -1316,7 +1482,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.96 ~ 107",
+    "pageCount": 12
   },
   {
     "id": "acad_50",
@@ -1344,7 +1512,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_51",
@@ -1369,7 +1539,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.194 ~ 207",
+    "pageCount": 14
   },
   {
     "id": "task_52",
@@ -1395,7 +1567,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.108 ~ 119",
+    "pageCount": 12
   },
   {
     "id": "acad_53",
@@ -1423,7 +1597,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_54",
@@ -1448,7 +1624,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.100 ~ 109",
+    "pageCount": 10
   },
   {
     "id": "acad_55",
@@ -1476,7 +1654,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_56",
@@ -1501,7 +1681,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.208 ~ 217",
+    "pageCount": 10
   },
   {
     "id": "task_57",
@@ -1526,7 +1708,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.218 ~ 224",
+    "pageCount": 7
   },
   {
     "id": "acad_58",
@@ -1554,7 +1738,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_59",
@@ -1580,7 +1766,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.110 ~ 117",
+    "pageCount": 8
   },
   {
     "id": "acad_60",
@@ -1608,7 +1796,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_61",
@@ -1634,7 +1824,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.120 ~ 129",
+    "pageCount": 10
   },
   {
     "id": "acad_62",
@@ -1662,7 +1854,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_63",
@@ -1687,7 +1881,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "수능부록 p.2 ~ 13",
+    "pageCount": 12
   },
   {
     "id": "task_64",
@@ -1712,7 +1908,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.130 ~ 139",
+    "pageCount": 10
   },
   {
     "id": "acad_65",
@@ -1740,7 +1938,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_66",
@@ -1765,7 +1965,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.118 ~ 125",
+    "pageCount": 8
   },
   {
     "id": "acad_67",
@@ -1793,7 +1995,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_68",
@@ -1818,7 +2022,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "수능부록 p.14 ~ 25",
+    "pageCount": 12
   },
   {
     "id": "task_69",
@@ -1843,7 +2049,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "수능부록 p.26 ~ 37",
+    "pageCount": 12
   },
   {
     "id": "acad_70",
@@ -1871,7 +2079,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_71",
@@ -1897,7 +2107,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.126 ~ 135",
+    "pageCount": 10
   },
   {
     "id": "acad_72",
@@ -1925,7 +2137,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_73",
@@ -1950,7 +2164,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.140 ~ 149",
+    "pageCount": 10
   },
   {
     "id": "acad_74",
@@ -1978,7 +2194,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_75",
@@ -2003,7 +2221,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "수능부록 p.38 ~ 48",
+    "pageCount": 11
   },
   {
     "id": "task_76",
@@ -2029,7 +2249,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.150 ~ 159",
+    "pageCount": 10
   },
   {
     "id": "acad_77",
@@ -2057,7 +2279,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_78",
@@ -2083,7 +2307,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.136 ~ 143",
+    "pageCount": 8
   },
   {
     "id": "acad_79",
@@ -2111,7 +2337,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_80",
@@ -2136,7 +2364,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "수능부록 특강 p.1 ~ 12",
+    "pageCount": 12
   },
   {
     "id": "task_81",
@@ -2161,7 +2391,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "수능부록 킬러 1편",
+    "pageCount": 14
   },
   {
     "id": "acad_82",
@@ -2189,7 +2421,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_83",
@@ -2215,7 +2449,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.144 ~ 152",
+    "pageCount": 9
   },
   {
     "id": "acad_84",
@@ -2243,7 +2479,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_85",
@@ -2269,7 +2507,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "p.160 ~ 168",
+    "pageCount": 9
   },
   {
     "id": "acad_86",
@@ -2297,7 +2537,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_87",
@@ -2322,7 +2564,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "수능부록 킬러 2편",
+    "pageCount": 14
   },
   {
     "id": "task_88",
@@ -2347,7 +2591,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "부록 p.1 ~ 24",
+    "pageCount": 24
   },
   {
     "id": "acad_89",
@@ -2375,7 +2621,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_90",
@@ -2400,7 +2648,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "부록 p.1 ~ 12",
+    "pageCount": 12
   },
   {
     "id": "acad_91",
@@ -2428,7 +2678,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_92",
@@ -2453,7 +2705,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "실전 모의평가 1회",
+    "pageCount": 10
   },
   {
     "id": "task_93",
@@ -2478,7 +2732,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "실전 모의평가 2회",
+    "pageCount": 10
   },
   {
     "id": "acad_94",
@@ -2506,7 +2762,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_95",
@@ -2531,7 +2789,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "부록 p.13 ~ 24",
+    "pageCount": 12
   },
   {
     "id": "acad_96",
@@ -2559,7 +2819,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_97",
@@ -2584,7 +2846,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "본책 전범위 (p.8~168)",
+    "pageCount": 168
   },
   {
     "id": "acad_98",
@@ -2612,7 +2876,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_99",
@@ -2637,7 +2903,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "본책 Ⅰ단원 (p.30~123)",
+    "pageCount": 94
   },
   {
     "id": "task_100",
@@ -2662,7 +2930,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "본책 Ⅰ~Ⅲ단원 (p.8~89)",
+    "pageCount": 82
   },
   {
     "id": "acad_101",
@@ -2690,7 +2960,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_102",
@@ -2715,7 +2987,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "본책 Ⅱ단원 (p.124~224)",
+    "pageCount": 101
   },
   {
     "id": "acad_103",
@@ -2743,7 +3017,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_104",
@@ -2768,7 +3044,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "본책 Ⅳ~Ⅴ단원 (p.90~152)",
+    "pageCount": 63
   },
   {
     "id": "task_105",
@@ -2793,7 +3071,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "수능부록 전범위 (p.2~48)",
+    "pageCount": 48
   },
   {
     "id": "acad_106",
@@ -2821,7 +3101,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   },
   {
     "id": "task_107",
@@ -2846,7 +3128,9 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "전과목 완주 리포트",
+    "pageCount": 0
   },
   {
     "id": "acad_108",
@@ -2874,6 +3158,8 @@ window.INITIAL_CURRICULUM = [
     "completedDate": null,
     "understanding": null,
     "daughterMemo": "",
-    "cheers": []
+    "cheers": [],
+    "pageRange": "학원 교재/과제물",
+    "pageCount": 0
   }
 ];

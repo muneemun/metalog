@@ -88,6 +88,25 @@
     if (saved) {
       try {
         tasks = JSON.parse(saved);
+        // Backfill pageRange and pageCount from INITIAL_CURRICULUM if missing
+        if (window.INITIAL_CURRICULUM && Array.isArray(window.INITIAL_CURRICULUM)) {
+          const initMap = {};
+          window.INITIAL_CURRICULUM.forEach(it => { initMap[it.id] = it; });
+          let updated = false;
+          tasks.forEach(t => {
+            if (initMap[t.id]) {
+              if (!t.pageRange && initMap[t.id].pageRange) {
+                t.pageRange = initMap[t.id].pageRange;
+                updated = true;
+              }
+              if (t.pageCount === undefined && initMap[t.id].pageCount !== undefined) {
+                t.pageCount = initMap[t.id].pageCount;
+                updated = true;
+              }
+            }
+          });
+          if (updated) saveTasksLocally();
+        }
         return;
       } catch (e) {
         console.error('Error parsing stored tasks, resetting to initial', e);
@@ -612,6 +631,7 @@
               <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border ${subjectBadge}">
                 ${task.subject}
               </span>
+              ${task.pageRange ? `<span class="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1">📖 ${task.pageRange}${task.pageCount ? ` (${task.pageCount}p)` : ''}</span>` : ''}
               ${task.chapter ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">${task.chapter}</span>` : ''}
               ${task.rescheduledFrom ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-orange-100 text-orange-700 border border-orange-200">일정 이동됨 (${task.rescheduledFrom})</span>` : ''}
               ${task.completedDate && task.completedDate !== task.plannedDate ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">완료일: ${task.completedDate}</span>` : ''}
@@ -918,7 +938,10 @@
       return `
         <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">${t.subject}</span>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">${t.subject}</span>
+              ${t.pageRange ? `<span class="text-xs font-extrabold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-md">📖 ${t.pageRange}</span>` : ''}
+            </div>
             <span class="text-xs font-medium text-slate-400">${t.plannedDate} (${t.weekday || ''})</span>
           </div>
 
@@ -1004,6 +1027,9 @@
             <span class="px-2 py-0.5 rounded font-bold text-xs ${t.subject === '통합과학1' ? 'bg-emerald-50 text-emerald-700' : t.subject === '한국사1' ? 'bg-amber-50 text-amber-700' : t.subject === '통합사회1' ? 'bg-sky-50 text-sky-700' : 'bg-purple-50 text-purple-700'}">${t.subject}</span>
           </td>
           <td class="px-3 py-3 font-medium text-slate-800 max-w-xs truncate">${t.unit}</td>
+          <td class="px-3 py-3 text-slate-600 whitespace-nowrap">
+            ${t.pageRange ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">📖 ${t.pageRange}</span>` : '<span class="text-slate-400 text-xs">-</span>'}
+          </td>
           <td class="px-3 py-3 text-center whitespace-nowrap text-base">${lightIcon}</td>
           <td class="px-3 py-3 text-center whitespace-nowrap">${statusBadge}</td>
           <td class="px-3 py-3 text-right whitespace-nowrap">
@@ -1179,9 +1205,12 @@
               return `
                 <div class="p-2.5 rounded-xl border ${isDone ? 'bg-slate-50/80 border-slate-200/80 opacity-80' : 'bg-white border-slate-200 shadow-2xs'} space-y-1.5 transition-all">
                   <div class="flex items-start justify-between gap-1">
-                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${badgeColor}">
-                      ${t.subject}
-                    </span>
+                    <div class="flex items-center gap-1 flex-wrap">
+                      <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${badgeColor}">
+                        ${t.subject}
+                      </span>
+                      ${t.pageRange ? `<span class="text-[9px] font-extrabold text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded">📖 ${t.pageRange}</span>` : ''}
+                    </div>
                     <button onclick="window.toggleTaskCompletion('${t.id}')" class="w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer ${isDone ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white hover:border-purple-400'}">
                       ${isDone ? '<span class="text-[10px] font-bold">✓</span>' : ''}
                     </button>
@@ -1511,6 +1540,46 @@
       barColor = 'bg-sky-500';
     }
 
+    const textbookSpecs = {
+      '통합과학1': {
+        name: '완자 고등 통합과학 1',
+        edition: '2022 개정 교육과정 (비상교육)',
+        totalPages: 376,
+        mainPages: 224,
+        appendixPages: 48,
+        answerPages: 104,
+        desc: '본책(개념+문제) 224쪽 + 수능 미리보기 48쪽 + 정답친해 104쪽'
+      },
+      '한국사1': {
+        name: '완자 고등 한국사 1',
+        edition: '2022 개정 교육과정 (비상교육)',
+        totalPages: 256,
+        mainPages: 168,
+        appendixPages: 24,
+        answerPages: 64,
+        desc: '본책(개념+문제) 168쪽 + 부록(연표·사료집) 24쪽 + 정답친해 64쪽'
+      },
+      '통합사회1': {
+        name: '완자 고등 통합사회 1',
+        edition: '2022 개정 교육과정 (비상교육)',
+        totalPages: 224,
+        mainPages: 152,
+        appendixPages: 24,
+        answerPages: 48,
+        desc: '본책(개념+문제) 152쪽 + 부록(핵심선지) 24쪽 + 정답과 해설 48쪽'
+      }
+    };
+
+    const book = textbookSpecs[subjectName] || {
+      name: `${subjectName} 교재`,
+      edition: '비상교육 완자',
+      totalPages: 0,
+      mainPages: 0,
+      appendixPages: 0,
+      answerPages: 0,
+      desc: ''
+    };
+
     if (titleEl) titleEl.textContent = `${subjectName} 전체 과정 로드맵`;
     if (badgeEl) badgeEl.innerHTML = `
       <span class="px-2.5 py-1 rounded-full text-xs font-bold border ${themeBg}">
@@ -1532,6 +1601,29 @@
     });
 
     let html = `
+      <!-- Textbook Specification Card -->
+      <div class="p-4 bg-gradient-to-r from-purple-50/90 to-indigo-50/90 rounded-2xl border border-purple-200 shadow-2xs mb-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs sm:text-sm font-extrabold text-slate-800">📖 교재 공식 제원: ${book.name}</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200">${book.edition}</span>
+            </div>
+            <div class="text-xs text-slate-600 mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span>총 쪽수: <strong class="text-purple-700 font-black">${book.totalPages}쪽</strong></span>
+              <span>본책 진도: <strong class="text-slate-800 font-bold">${book.mainPages}p</strong></span>
+              <span>부록: <strong class="text-slate-800 font-bold">${book.appendixPages}p</strong></span>
+              <span>정답과 해설: <strong class="text-slate-800 font-bold">${book.answerPages}p</strong></span>
+            </div>
+          </div>
+          <div class="flex-shrink-0">
+            <span class="inline-flex items-center gap-1 px-3 py-1 bg-white text-purple-700 font-extrabold text-xs rounded-xl border border-purple-200 shadow-2xs">
+              🎯 1회독 본문 목표: ${book.mainPages}쪽 완주
+            </span>
+          </div>
+        </div>
+      </div>
+
       <!-- Progress Bar & Summary Stats in Modal -->
       <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 mb-5">
         <div class="flex items-center justify-between text-xs sm:text-sm">
@@ -1596,6 +1688,7 @@
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-purple-700 transition-colors ${isDone ? 'line-through text-slate-400' : ''}">${t.unit}</span>
+                  ${t.pageRange ? `<span class="text-[11px] font-extrabold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-md whitespace-nowrap">📖 ${t.pageRange}${t.pageCount ? ` (${t.pageCount}p)` : ''}</span>` : ''}
                   <span class="text-[11px] text-slate-400 font-medium whitespace-nowrap">📅 ${t.plannedDate} (${t.weekday || ''})</span>
                 </div>
                 <p class="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">${t.summary || ''}</p>
