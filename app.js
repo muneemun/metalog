@@ -1510,6 +1510,16 @@
     if (modal) modal.classList.add('hidden');
   };
 
+  window.openRoutineGuideModal = function() {
+    const modal = document.getElementById('routine-guide-modal');
+    if (modal) modal.classList.remove('hidden');
+  };
+
+  window.closeRoutineGuideModal = function() {
+    const modal = document.getElementById('routine-guide-modal');
+    if (modal) modal.classList.add('hidden');
+  };
+
   window.saveFirebaseConfig = function() {
     const configInput = document.getElementById('settings-firebase-config');
     if (!configInput) return;
